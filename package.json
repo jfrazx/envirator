@@ -1,0 +1,68 @@
+{
+  "name": "@status/envirator",
+  "version": "0.0.0-development",
+  "description": "Ensure environment variable availability during program initialization",
+  "main": "index.js",
+  "scripts": {
+    "commit": "git-cz",
+    "test": "mocha --require ts-node/register test/*.spec.ts",
+    "tsc": "tsc",
+    "compile": "tsc -d",
+    "coverage:check": "nyc check-coverage",
+    "coverage:report": "nyc report --reporter=text-lcov > coverage.lcov",
+    "coverage:post": "codecov",
+    "coverage:test": "nyc mocha",
+    "nyc": "nyc",
+    "precommit": "npm run coverage:test && npm run coverage:check",
+    "prepush": "npm run coverage:test",
+    "publish": "npx semantic-release",
+    "semantic-release": "semantic-release",
+    "semantic:cli": "semantic-release-cli"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jfrazx/envirator.git"
+  },
+  "keywords": [],
+  "author": "jfrazx",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jfrazx/envirator/issues"
+  },
+  "homepage": "https://github.com/jfrazx/envirator#readme",
+  "dependencies": {
+    "@jfrazx/asarray": "^1.0.0",
+    "chalk": "^2.4.2",
+    "dotenv": "^8.1.0",
+    "sinon": "^7.4.1"
+  },
+  "devDependencies": {
+    "@istanbuljs/nyc-config-typescript": "^0.1.3",
+    "@types/chai": "^4.2.0",
+    "@types/dotenv": "^6.1.1",
+    "@types/mocha": "^5.2.7",
+    "@types/node": "^12.7.2",
+    "@types/sinon": "^7.0.13",
+    "@types/winston": "^2.4.4",
+    "chai": "^4.2.0",
+    "codecov": "^3.5.0",
+    "commitizen": "^4.0.3",
+    "cz-conventional-changelog": "^3.0.2",
+    "husky": "^3.0.4",
+    "mocha": "^6.2.0",
+    "nyc": "^14.1.1",
+    "semantic-release": "^15.13.24",
+    "semantic-release-cli": "^5.1.2",
+    "source-map-support": "^0.5.13",
+    "travis-deploy-once": "^5.0.11",
+    "ts-node": "^8.3.0",
+    "tslint": "^5.18.0",
+    "typescript": "^3.5.3",
+    "winston": "^2.4.4"
+  },
+  "config": {
+    "commitizen": {
+      "path": "cz-conventional-changelog"
+    }
+  }
+}
