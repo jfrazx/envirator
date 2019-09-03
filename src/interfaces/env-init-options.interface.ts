@@ -1,7 +1,5 @@
-import { EnvLogger } from './env-logger.interface';
+import { EnvStartOptions } from './env-start-options.interface';
 
-export interface EnvInitOptions {
-  logger?: EnvLogger;
-  warnOnly?: boolean;
-  productionDefaults?: boolean;
+export interface EnvInitOptions extends EnvStartOptions {
+  nodeEnv?: string;
 }

@@ -1,6 +1,7 @@
-import { EnvInitOptions } from './env-init-options.interface';
+import { EnvStartOptions } from './env-start-options.interface';
+import { EnvMutator } from './env-mutator.interface';
 
-export interface EnvOptions extends EnvInitOptions {
+export interface EnvOptions extends EnvStartOptions {
   defaultValue?: any;
-  mutators?: Function | Function[];
+  mutators?: EnvMutator | EnvMutator[];
 }

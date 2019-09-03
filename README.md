@@ -41,6 +41,7 @@ const envOpts: EnvInitOptions = {
   logger: winston,
   warnOnly: true,
   productionDefaults: true,
+  nodeEnv: 'NODE_ENVIRONMENT',
 };
 
 const envirator = new Envirator(envOpts);
@@ -51,6 +52,7 @@ const envirator = new Envirator(envOpts);
 - `logger: EnvLogger` :: Prints warning and error messages to the terminal. Default is `console` object.
 - `warnOnly: boolean` :: Warn of missing environment variables rather than exit. Does nothing in production environment. Default is `false`
 - `productionDefaults: boolean` :: Specifies if supplied default values should be allowed in a production environment. Default is `false`
+- `nodeEnv: string` :: Change where to locate the Node environment. Default is `NODE_ENV`
 
 ### Configs
 
@@ -118,3 +120,30 @@ envirator.set(enVars);
 All values are set as strings. No checks are made to ensure the key currently does not exist.
 
 ---
+
+## Examples
+
+Perhaps in your local development environment you don't have a database user/password.
+
+```typescript
+import { Envirator } from '@status/envirator';
+
+const env = new Envirator();
+
+const DB_USER = env.provide('DB_USER', { warnOnly: true });
+const DB_PASSWORD = env.provide('DB_PASSWORD', { warnOnly: true });
+```
+
+A warning is issued to the console rather than immediately exiting, unless the environment is production.
+
+\---
+
+Or setting a pool size
+
+```typescript
+const MONGO_POOL = env.provide<number>('MONGO_POOL', {
+  defaultValue: 15,
+  mutators: parseInt,
+  productionDefaults: true,
+});
+```

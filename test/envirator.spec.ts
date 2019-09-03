@@ -29,6 +29,7 @@ describe('Envirator', () => {
     expect(envirator.productionDefaults).to.be.false;
     expect(envirator.warnOnly).to.be.false;
     expect(envirator.logger).to.equal(console);
+    expect(envirator.nodeEnv).to.equal('NODE_ENV');
   });
 
   it('should allow defaults to be overriden', () => {
@@ -39,11 +40,13 @@ describe('Envirator', () => {
         warn: console.log,
         error: console.error,
       },
+      nodeEnv: 'NODE_ENVIRONMENT',
     });
 
     expect(envirator.productionDefaults).to.be.true;
     expect(envirator.warnOnly).to.be.true;
     expect(envirator.logger).to.not.equal(console);
+    expect(envirator.nodeEnv).to.equal('NODE_ENVIRONMENT');
   });
 
   it('should warn when an env var does not exist', () => {
@@ -115,7 +118,7 @@ describe('Envirator', () => {
     const envirator = new Envirator({ warnOnly: true });
     await envirator.load(join(__dirname, '.env.development'));
 
-    const port = envirator.provide<number>('PORTZ', { mutators: parseInt });
+    const port = envirator.provide('PORTZ', { mutators: parseInt });
 
     expect(port).to.be.a('number');
     expect(port).to.equal(5200);

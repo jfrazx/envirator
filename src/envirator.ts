@@ -1,26 +1,37 @@
 import { asArray } from '@jfrazx/asarray';
 import chalk from 'chalk';
 
-import { EnvOptions, EnvLogger, EnvInitOptions } from './interfaces';
 import { isString, isUndefined } from './helpers';
+import {
+  EnvOptions,
+  EnvLogger,
+  EnvMutator,
+  EnvInitOptions,
+} from './interfaces';
 
 export class Envirator implements EnvInitOptions {
   readonly productionDefaults: boolean;
   readonly logger: EnvLogger;
   readonly warnOnly: boolean;
+  readonly nodeEnv: string;
 
   constructor({
     logger = console,
     warnOnly = false,
     productionDefaults = false,
+    nodeEnv = 'NODE_ENV',
   }: EnvInitOptions = {}) {
     this.logger = logger;
+    this.nodeEnv = nodeEnv;
     this.warnOnly = warnOnly;
     this.productionDefaults = productionDefaults;
   }
 
-  static async load(path?: string, logger: EnvLogger = console): Promise<void> {
-    const env = process.env.NODE_ENV || 'development';
+  static async load(
+    path?: string,
+    { logger = console, nodeEnv = 'NODE_ENV' }: EnvInitOptions = {}
+  ): Promise<void> {
+    const env = process.env[nodeEnv] || 'development';
     const dotenv = await import('dotenv');
 
     path = path === undefined ? `.env.${env}` : path;
@@ -40,7 +51,10 @@ export class Envirator implements EnvInitOptions {
   }
 
   async load(path?: string): Promise<void> {
-    return await Envirator.load(path, this.logger);
+    return await Envirator.load(path, {
+      logger: this.logger,
+      nodeEnv: this.nodeEnv,
+    });
   }
 
   private defaultEnv(
@@ -91,9 +105,9 @@ export class Envirator implements EnvInitOptions {
 
     this.exitOrWarn(key, value, warnOnly, logger);
 
-    return asArray<any>(mutators).reduce(
-      (memo: any, func: Function) => func.call(null, memo),
-      value
+    return asArray<EnvMutator<T>>(mutators as EnvMutator).reduce(
+      (memo: any, func: EnvMutator<T>) => func.call(null, memo),
+      value as unknown
     ) as T;
   }
 
@@ -136,7 +150,8 @@ export class Envirator implements EnvInitOptions {
 
   private isProduction(): boolean {
     return (
-      (process.env.NODE_ENV || 'development').toLowerCase() === 'production'
+      (process.env[this.nodeEnv] || 'development').toLowerCase() ===
+      'production'
     );
   }
 }
