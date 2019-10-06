@@ -3,10 +3,13 @@ import chalk from 'chalk';
 
 import { isString, isUndefined } from './helpers';
 import {
-  EnvOptions,
+  EnvMany,
   EnvLogger,
   EnvMutator,
+  EnvOptions,
+  EnvManyResult,
   EnvInitOptions,
+  EnvManyOptions,
 } from './interfaces';
 
 export class Envirator implements EnvInitOptions {
@@ -57,25 +60,6 @@ export class Envirator implements EnvInitOptions {
     });
   }
 
-  private defaultEnv(
-    key: string,
-    defaultValue: any,
-    productionDefaults: boolean
-  ): string | undefined {
-    const value = process.env[key];
-
-    return !isUndefined(value) ||
-      this.shouldNotProvideProductionDefaults(productionDefaults)
-      ? value
-      : defaultValue;
-  }
-
-  private shouldNotProvideProductionDefaults(
-    productionDefaults: boolean
-  ): boolean {
-    return !productionDefaults && this.isProduction();
-  }
-
   /**
    *
    *
@@ -107,8 +91,27 @@ export class Envirator implements EnvInitOptions {
 
     return asArray<EnvMutator<T>>(mutators as EnvMutator).reduce(
       (memo: any, func: EnvMutator<T>) => func.call(null, memo),
-      value as unknown
+      value
     ) as T;
+  }
+
+  /**
+   * Provide many environment variables at once
+   *
+   * @param {EnvMany} envars
+   * @returns {EnvManyResult}
+   * @memberof Envirator
+   */
+  provideMany(envars: EnvMany): EnvManyResult {
+    return envars.reduce((memo, envar) => {
+      const { key = envar as string } = envar as EnvManyOptions;
+      const opts: EnvOptions = isString(envar) ? {} : envar;
+
+      return {
+        ...memo,
+        [key]: this.provide(key, opts),
+      };
+    }, {});
   }
 
   setEnv(key: string, value: any): void;
@@ -121,6 +124,20 @@ export class Envirator implements EnvInitOptions {
     Object.entries(env).forEach(([key, value]) => {
       process.env[key] = String(value);
     });
+  }
+
+  /**
+   * Property that indicates if the current environment is production
+   *
+   * @readonly
+   * @type {boolean}
+   * @memberof Envirator
+   */
+  get isProduction(): boolean {
+    return (
+      (process.env[this.nodeEnv] || 'development').toLowerCase() ===
+      'production'
+    );
   }
 
   private exitOrWarn(
@@ -145,13 +162,25 @@ export class Envirator implements EnvInitOptions {
   }
 
   private shouldExit(warnOnly: boolean): boolean {
-    return this.isProduction() || !warnOnly;
+    return this.isProduction || !warnOnly;
   }
 
-  private isProduction(): boolean {
-    return (
-      (process.env[this.nodeEnv] || 'development').toLowerCase() ===
-      'production'
-    );
+  private defaultEnv(
+    key: string,
+    defaultValue: any,
+    productionDefaults: boolean
+  ): string | undefined {
+    const value = process.env[key];
+
+    return !isUndefined(value) ||
+      this.shouldNotProvideProductionDefaults(productionDefaults)
+      ? value
+      : defaultValue;
+  }
+
+  private shouldNotProvideProductionDefaults(
+    productionDefaults: boolean
+  ): boolean {
+    return !productionDefaults && this.isProduction;
   }
 }

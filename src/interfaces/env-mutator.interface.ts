@@ -1,3 +1,3 @@
-export interface EnvMutator<T = any> {
-  (value: any): T;
+export interface EnvMutator<T = any, R = any> {
+  (value: T): R;
 }

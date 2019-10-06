@@ -97,6 +97,26 @@ const port = envirator.provide<number>('PORT', envOpts);
 In addition to the three options previously discussed, you may provide a default value for use in the event an environment variable does not exist.  
 A single function or an array of functions may be passed to modify the extracted value.
 
+Often you may need many environment variables.
+
+```typescript
+import { EnvManyOptions } from '@status/codes';
+
+const envVar: EnvManyOptions = {
+  key: 'SOME_VAR',
+  defaultValue: 3400,
+  warnOnly: true,
+  productionDefaults: false,
+  mutators: parseInt,
+};
+
+const { NODE_ENV, SOME_VAR, CONTENT } = envirator.provideMany([
+  'NODE_ENV',
+  envVar,
+  { key: 'CONTENT' },
+]);
+```
+
 ### Set Values
 
 You may set environment variables by passing an object or a single key value pair.
@@ -114,10 +134,20 @@ const envVars = {
   COOKIE: 'cookie-monster',
 };
 
-envirator.set(enVars);
+envirator.set(envVars);
 ```
 
 All values are set as strings. No checks are made to ensure the key currently does not exist.
+
+## Properties
+
+Envirator also has a handy property that indicates if the current environment is production.
+
+```typescript
+if (envirator.isProduction) {
+  // do stuff
+}
+```
 
 ---
 
@@ -130,8 +160,10 @@ import { Envirator } from '@status/envirator';
 
 const env = new Envirator();
 
-const DB_USER = env.provide('DB_USER', { warnOnly: true });
-const DB_PASSWORD = env.provide('DB_PASSWORD', { warnOnly: true });
+const { DB_USER: dbUser, DB_PASSWORD: dbPass } = env.provideMany([
+  { key: 'DB_USER', warnOnly: true },
+  { key: 'DB_PASSWORD', warnOnly: true },
+]);
 ```
 
 A warning is issued to the console rather than immediately exiting, unless the environment is production.
@@ -146,4 +178,23 @@ const MONGO_POOL = env.provide<number>('MONGO_POOL', {
   mutators: parseInt,
   productionDefaults: true,
 });
+```
+
+\---
+
+Create a config that includes envirator to provide in other files.
+
+```typescript
+export const config = {
+  environment: envirator.provide('NODE_ENV'),
+  port: envirator.provide('PORT', { mutators: parseInt }),
+  env: envirator,
+};
+
+// elsewhere
+import { config } from './config';
+
+const { env } = config;
+
+const dbPass = env.provide('DB_PASSWORD', { warnOnly: true });
 ```

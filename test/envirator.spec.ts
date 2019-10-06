@@ -1,4 +1,4 @@
-import { Envirator } from '../src';
+import { Envirator, EnvManyOptions } from '../src';
 import { expect } from 'chai';
 import { join } from 'path';
 import chalk from 'chalk';
@@ -299,5 +299,40 @@ describe('Envirator', () => {
         productionDefaults: true,
       })
     ).to.equal('someValue');
+  });
+
+  it('should provide many environment variables', () => {
+    const env = new Envirator({
+      warnOnly: true,
+      logger: {
+        warn: () => {},
+        error: console.error,
+      },
+    });
+
+    env.setEnv('NODE_ENV', 'development');
+    const opt: EnvManyOptions = {
+      key: 'NODE_ENV',
+      defaultValue: 'development',
+    };
+    const options = [opt, 'SOME_VAR', { key: 'UNKNOWN' }];
+
+    const envars = env.provideMany(options);
+
+    expect(envars).to.be.an('object');
+  });
+
+  it('should provide a boolean based on if production environment', () => {
+    const env = new Envirator();
+
+    env.setEnv('NODE_ENV', 'development');
+
+    expect(env.isProduction).to.be.false;
+
+    env.setEnv('NODE_ENV', 'production');
+    expect(env.isProduction).to.be.true;
+
+    env.setEnv('NODE_ENV', 'test');
+    expect(env.isProduction).to.be.false;
   });
 });
