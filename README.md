@@ -139,7 +139,7 @@ envirator.set(envVars);
 
 All values are set as strings. No checks are made to ensure the key currently does not exist.
 
-## Properties
+### Properties
 
 Envirator also has a handy property that indicates if the current environment is production.
 
