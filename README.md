@@ -63,11 +63,11 @@ import { Envirator } from '@status/envirator';
 
 const envirator = new Envirator();
 
-await envirator.load();
+envirator.load();
 
 // or
 
-await envirator.load('./path/to/config');
+envirator.load('./path/to/config');
 ```
 
 Environment based loading expects a file named `.env.environment` in the root of your project. For example, a development based environment would attempt to load `.env.development`.  

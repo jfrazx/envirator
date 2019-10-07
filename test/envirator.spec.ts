@@ -62,18 +62,18 @@ describe('Envirator', () => {
     );
   });
 
-  it('should load a config based on the environment', async () => {
+  it('should load a config based on the environment', () => {
     const envirator = new Envirator({
       warnOnly: true,
     });
 
-    await Envirator.load();
+    Envirator.load();
 
     expect(envirator.provide('PORTAL')).to.equal('5200');
     expect(envirator.provide('SESSIONAL')).to.equal('thisissession');
   });
 
-  it('should load a config from a path', async () => {
+  it('should load a config from a path', () => {
     const envirator = new Envirator({
       warnOnly: true,
       logger: {
@@ -88,7 +88,7 @@ describe('Envirator', () => {
     expect(value).to.be.undefined;
     expect(sess).to.be.undefined;
 
-    await envirator.load(join(__dirname, '.env.development'));
+    envirator.load(join(__dirname, '.env.development'));
 
     const port = envirator.provide('PORTZ', { logger: winston });
     const session = envirator.provide('SESSIONZ');
@@ -100,23 +100,27 @@ describe('Envirator', () => {
     expect(session).to.equal('thisissession');
   });
 
-  it('should exit if config loading fails', async () => {
-    const envirator = new Envirator({
-      logger: {
-        warn: console.warn,
-        error: () => {},
-      },
-    });
+  it('should exit if config loading fails', () => {
+    const error = sinon.stub(console, 'error');
 
-    await envirator.load('config.fail');
+    const envirator = new Envirator();
 
+    envirator.load('config.fail');
+
+    sinon.assert.called(error);
+    sinon.assert.calledWith(
+      error,
+      chalk.red(
+        `[ENV ERROR] failed to load 'config.fail': Error: ENOENT: no such file or directory, open 'config.fail'`
+      )
+    );
     sinon.assert.called(process.exit as any);
     sinon.assert.calledWith(process.exit as any, 1);
   });
 
-  it('should accept a single mutator', async () => {
+  it('should accept a single mutator', () => {
     const envirator = new Envirator({ warnOnly: true });
-    await envirator.load(join(__dirname, '.env.development'));
+    envirator.load(join(__dirname, '.env.development'));
 
     const port = envirator.provide('PORTZ', { mutators: parseInt });
 
@@ -124,9 +128,9 @@ describe('Envirator', () => {
     expect(port).to.equal(5200);
   });
 
-  it('should accept an array of mutators', async () => {
+  it('should accept an array of mutators', () => {
     const envirator = new Envirator({ warnOnly: true });
-    await envirator.load(join(__dirname, '.env.development'));
+    envirator.load(join(__dirname, '.env.development'));
 
     const port = envirator.provide<number>('PORTZ', {
       mutators: [parseInt, (value: number) => value + 500],

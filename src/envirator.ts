@@ -1,4 +1,5 @@
 import { asArray } from '@jfrazx/asarray';
+import * as dotenv from 'dotenv';
 import chalk from 'chalk';
 
 import { isString, isUndefined } from './helpers';
@@ -30,19 +31,18 @@ export class Envirator implements EnvInitOptions {
     this.productionDefaults = productionDefaults;
   }
 
-  static async load(
+  static load(
     path?: string,
     { logger = console, nodeEnv = 'NODE_ENV' }: EnvInitOptions = {}
-  ): Promise<void> {
-    const env = process.env[nodeEnv] || 'development';
-    const dotenv = await import('dotenv');
+  ): void {
+    const env = (process.env[nodeEnv] || 'development').toLowerCase();
 
     path = path === undefined ? `.env.${env}` : path;
     const envResult = dotenv.config({ path });
 
     if (envResult.error) {
       this.exit(
-        chalk.red(`'[ERROR] env failed to load:' ${envResult.error}`),
+        chalk.red(`[ENV ERROR] failed to load '${path}': ${envResult.error}`),
         logger
       );
     }
@@ -53,8 +53,14 @@ export class Envirator implements EnvInitOptions {
     process.exit(1);
   }
 
-  async load(path?: string): Promise<void> {
-    return await Envirator.load(path, {
+  /**
+   * Load config containing environment variables
+   *
+   * @param {string} [path]
+   * @memberof Envirator
+   */
+  load(path?: string): void {
+    Envirator.load(path, {
       logger: this.logger,
       nodeEnv: this.nodeEnv,
     });
