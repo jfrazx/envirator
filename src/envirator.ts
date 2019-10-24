@@ -140,10 +140,15 @@ export class Envirator implements EnvInitOptions {
    * @memberof Envirator
    */
   get isProduction(): boolean {
-    return (
-      (process.env[this.nodeEnv] || 'development').toLowerCase() ===
-      'production'
-    );
+    return this.currentEnv === 'production';
+  }
+
+  get currentEnv(): string {
+    return (process.env[this.nodeEnv] || 'development').toLowerCase();
+  }
+
+  set currentEnv(env: string) {
+    this.setEnv(this.nodeEnv, env);
   }
 
   private exitOrWarn(

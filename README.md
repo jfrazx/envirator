@@ -149,6 +149,16 @@ if (envirator.isProduction) {
 }
 ```
 
+You can retrieve or set the current environment:
+
+```typescript
+envirator.currentEnv;
+// => development or whatever the current environment may be (always lowercase)
+
+envirator.currentEnv = 'test';
+// equivalent to 'envirator.setEnv('NODE_ENV', 'test');' NODE_ENV is whatever was set at initialization
+```
+
 ---
 
 ## Examples
@@ -186,7 +196,7 @@ Create a config that includes envirator to provide in other files.
 
 ```typescript
 export const config = {
-  environment: envirator.provide('NODE_ENV'),
+  environment: envirator.currentEnv,
   port: envirator.provide('PORT', { mutators: parseInt }),
   env: envirator,
 };

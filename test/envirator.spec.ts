@@ -329,14 +329,26 @@ describe('Envirator', () => {
   it('should provide a boolean based on if production environment', () => {
     const env = new Envirator();
 
-    env.setEnv('NODE_ENV', 'development');
+    env.setEnv('NODE_ENV', 'test');
 
     expect(env.isProduction).to.be.false;
 
     env.setEnv('NODE_ENV', 'production');
     expect(env.isProduction).to.be.true;
 
-    env.setEnv('NODE_ENV', 'test');
+    env.setEnv('NODE_ENV', 'development');
     expect(env.isProduction).to.be.false;
+  });
+
+  it('should supply the current environment', () => {
+    const env = new Envirator();
+
+    expect(env.currentEnv).to.equal('development');
+
+    env.setEnv('NODE_ENV', 'production');
+    expect(env.currentEnv).to.equal('production');
+
+    env.currentEnv = 'test';
+    expect(env.currentEnv).to.equal('test');
   });
 });
