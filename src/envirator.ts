@@ -41,16 +41,11 @@ export class Envirator implements EnvInitOptions {
     const envResult = dotenv.config({ path });
 
     if (envResult.error) {
-      this.exit(
-        chalk.red(`[ENV ERROR] failed to load '${path}': ${envResult.error}`),
-        logger
+      logger.error(
+        chalk.red(`[ENV ERROR] failed to load '${path}': ${envResult.error}`)
       );
+      process.exit(1);
     }
-  }
-
-  private static exit(message: string, logger: EnvLogger): void {
-    logger.error(message);
-    process.exit(1);
   }
 
   /**
@@ -162,10 +157,9 @@ export class Envirator implements EnvInitOptions {
       const message = `[ENV ${level}]: Missing environment variable '${key}'`;
 
       if (this.shouldExit(warnOnly)) {
-        return Envirator.exit(
-          chalk.red(message.replace(level, 'ERROR')),
-          logger
-        );
+        logger.error(chalk.red(message.replace(level, 'ERROR')));
+
+        return process.exit(1);
       }
 
       logger.warn(chalk.yellow(message.replace(level, 'WARN')));
