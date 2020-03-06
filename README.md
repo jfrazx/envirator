@@ -28,6 +28,8 @@ const port = envirator.provide('PORT');
 
 If `PORT` exists it will be of type `string`. Otherwise, a message will print to the console and immediately exit.
 
+`Envirator` may also be imported by its alias: `Env`.
+
 ### Initialization
 
 Upon initialization you may specify several options:
@@ -42,6 +44,8 @@ const envOpts: EnvInitOptions = {
   warnOnly: true,
   productionDefaults: true,
   nodeEnv: 'NODE_ENVIRONMENT',
+  noDefaultEnv: true,
+  keyToJsProp: true,
 };
 
 const envirator = new Envirator(envOpts);
@@ -53,6 +57,8 @@ const envirator = new Envirator(envOpts);
 - `warnOnly: boolean` :: Warn of missing environment variables rather than exit. Does nothing in production environment. Default is `false`
 - `productionDefaults: boolean` :: Specifies if supplied default values should be allowed in a production environment. Default is `false`
 - `nodeEnv: string` :: Change where to locate the Node environment. Default is `NODE_ENV`
+- `noDefaultEnv: boolean` :: Specify if you do not want to provide a default environment if one is not set. Default is `false`
+- `keyToJsProp: boolean` :: If true, when calling provideMany, the requested environment variable key will be transformed to camelcase. Default is `false`
 
 ### Configs
 
@@ -97,6 +103,8 @@ const port = envirator.provide<number>('PORT', envOpts);
 In addition to the three options previously discussed, you may provide a default value for use in the event an environment variable does not exist.  
 A single function or an array of functions may be passed to modify the extracted value.
 
+---
+
 Often you may need many environment variables.
 
 ```typescript
@@ -108,9 +116,10 @@ const envVar: EnvManyOptions = {
   warnOnly: true,
   productionDefaults: false,
   mutators: parseInt,
+  keyToJsProp: true,
 };
 
-const { NODE_ENV, SOME_VAR, CONTENT } = envirator.provideMany([
+const { NODE_ENV, someVar, CONTENT: content } = envirator.provideMany([
   'NODE_ENV',
   envVar,
   { key: 'CONTENT' },
@@ -166,11 +175,11 @@ envirator.currentEnv = 'test';
 Perhaps in your local development environment you don't have a database user/password.
 
 ```typescript
-import { Envirator } from '@status/envirator';
+import { Env } from '@status/envirator';
 
-const env = new Envirator();
+const env = new Env({ keyToJsProp: true });
 
-const { DB_USER: dbUser, DB_PASSWORD: dbPass } = env.provideMany([
+const { dbUser, dbPassword } = env.provideMany([
   { key: 'DB_USER', warnOnly: true },
   { key: 'DB_PASSWORD', warnOnly: true },
 ]);
@@ -196,9 +205,9 @@ Create a config that includes envirator to provide in other files.
 
 ```typescript
 export const config = {
-  environment: envirator.currentEnv,
-  port: envirator.provide('PORT', { mutators: parseInt }),
-  env: envirator,
+  environment: env.currentEnv,
+  port: env.provide<number>('PORT', { mutators: parseInt }),
+  env,
 };
 
 // elsewhere

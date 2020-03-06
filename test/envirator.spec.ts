@@ -1,4 +1,4 @@
-import { Envirator, EnvManyOptions } from '../src';
+import { Envirator, EnvManyOptions, Env } from '../src';
 import { expect } from 'chai';
 import { join } from 'path';
 import chalk from 'chalk';
@@ -7,8 +7,15 @@ import * as winston from 'winston';
 import * as sinon from 'sinon';
 
 describe('Envirator', () => {
+  let originalEnv: any;
+
+  before(() => {
+    originalEnv = { ...process.env };
+  });
+
   afterEach(() => {
     sinon.restore();
+    process.env = { ...originalEnv };
   });
 
   beforeEach(() => {
@@ -24,12 +31,14 @@ describe('Envirator', () => {
   });
 
   it('should supply default values', () => {
-    const envirator = new Envirator();
+    const envirator = new Env();
 
     expect(envirator.productionDefaults).to.be.false;
     expect(envirator.warnOnly).to.be.false;
     expect(envirator.logger).to.equal(console);
     expect(envirator.nodeEnv).to.equal('NODE_ENV');
+    expect(envirator.noDefaultEnv).to.be.false;
+    expect(envirator.keyToJsProp).to.be.false;
   });
 
   it('should allow defaults to be overriden', () => {
@@ -41,36 +50,57 @@ describe('Envirator', () => {
         error: console.error,
       },
       nodeEnv: 'NODE_ENVIRONMENT',
+      noDefaultEnv: true,
+      keyToJsProp: true,
     });
 
     expect(envirator.productionDefaults).to.be.true;
     expect(envirator.warnOnly).to.be.true;
     expect(envirator.logger).to.not.equal(console);
     expect(envirator.nodeEnv).to.equal('NODE_ENVIRONMENT');
+    expect(envirator.noDefaultEnv).to.be.true;
+    expect(envirator.keyToJsProp).to.be.true;
   });
 
   it('should warn when an env var does not exist', () => {
     const envirator = new Envirator({ warnOnly: true });
 
-    sinon.stub(console, 'warn');
+    const warn = sinon.stub(console, 'warn');
 
     expect(envirator.provide('SOME_ENV_VAR')).to.be.undefined;
-    sinon.assert.called(console.warn as any);
+    sinon.assert.called(warn);
     sinon.assert.calledWith(
-      console.warn as any,
+      warn,
       chalk.yellow(`[ENV WARN]: Missing environment variable 'SOME_ENV_VAR'`)
     );
   });
 
   it('should load a config based on the environment', () => {
-    const envirator = new Envirator({
+    const env = new Envirator({
       warnOnly: true,
     });
 
-    Envirator.load();
+    env.load();
 
-    expect(envirator.provide('PORTAL')).to.equal('5200');
-    expect(envirator.provide('SESSIONAL')).to.equal('thisissession');
+    expect(env.provide('PORTAL')).to.equal('5200');
+    expect(env.provide('SESSIONAL')).to.equal('thisissession');
+  });
+
+  it('should load a config when passing an object', () => {
+    const env = new Envirator({
+      warnOnly: true,
+    });
+
+    env.load({
+      logger: console,
+      nodeEnv: 'development',
+      config: {
+        path: '.env.development',
+      },
+    });
+
+    expect(env.provide('PORTAL')).to.equal('5200');
+    expect(env.provide('SESSIONAL')).to.equal('thisissession');
   });
 
   it('should load a config from a path', () => {
@@ -324,6 +354,51 @@ describe('Envirator', () => {
     const envars = env.provideMany(options);
 
     expect(envars).to.be.an('object');
+    expect(envars.NODE_ENV).to.exist;
+    expect('SOME_VAR' in envars).to.be.true;
+    expect('UNKNOWN' in envars).to.be.true;
+  });
+
+  it('should provide many environment variables with and without changing key', () => {
+    const env = new Envirator({
+      warnOnly: true,
+      logger: {
+        warn: () => {},
+        error: console.error,
+      },
+      keyToJsProp: true,
+    });
+
+    env.setEnv('NODE_ENV', 'development');
+    const opt: EnvManyOptions = {
+      key: 'NODE_ENV',
+      defaultValue: 'development',
+      keyToJsProp: false,
+    };
+    const options = [
+      opt,
+      { key: 'SOME_VAR', defaultValue: 'some value' },
+      { key: 'UNKNOWN-VAR', defaultValue: 'unknown' },
+      { key: 'UNKNOWN-VAR_CHAR', defaultValue: 'meh' },
+      { key: 'keyvar', defaultValue: 'content' },
+      { key: 'keyCar', defaultValue: 'con-tent', keyToJsProp: false },
+    ];
+
+    const envars = env.provideMany(options);
+
+    expect(envars.NODE_ENV).to.exist;
+    expect(envars.someVar).to.exist;
+    expect(envars.unknownVar).to.exist;
+    expect(envars.unknownVarChar).to.exist;
+    expect(envars.keyvar).to.exist;
+    expect(envars.keyCar).to.exist;
+
+    expect(envars.NODE_ENV).to.equal('development');
+    expect(envars.someVar).to.equal('some value');
+    expect(envars.unknownVar).to.equal('unknown');
+    expect(envars.unknownVarChar).to.equal('meh');
+    expect(envars.keyvar).to.equal('content');
+    expect(envars.keyCar).to.equal('con-tent');
   });
 
   it('should provide a boolean based on if production environment', () => {
@@ -350,5 +425,24 @@ describe('Envirator', () => {
 
     env.currentEnv = 'test';
     expect(env.currentEnv).to.equal('test');
+  });
+
+  it('should exit when noDefaultEnv is set to true', () => {
+    const env = new Envirator({
+      noDefaultEnv: true,
+      warnOnly: true,
+      logger: winston,
+    });
+
+    const currentEnv = env.currentEnv;
+
+    expect(currentEnv).to.be.undefined;
+    sinon.assert.called(winston.error as any);
+    sinon.assert.calledWith(
+      winston.error as any,
+      chalk.red(`[ENV ERROR]: Missing environment variable 'NODE_ENV'`)
+    );
+    sinon.assert.called(process.exit as any);
+    sinon.assert.calledWith(process.exit as any, 1);
   });
 });
