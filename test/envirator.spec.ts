@@ -135,7 +135,9 @@ describe('Envirator', () => {
 
     const envirator = new Envirator();
 
-    envirator.load('config.fail');
+    envirator.load('config.fail', {
+      logger: console,
+    });
 
     sinon.assert.called(error);
     sinon.assert.calledWith(
@@ -146,6 +148,27 @@ describe('Envirator', () => {
     );
     sinon.assert.called(process.exit as any);
     sinon.assert.calledWith(process.exit as any, 1);
+  });
+
+  it('should exit when loading and noDefaultEnv is set', () => {
+    const error = sinon.stub(console, 'error');
+    const env = new Envirator({
+      noDefaultEnv: true,
+      logger: {
+        warn: () => {},
+        error,
+      },
+    });
+
+    env.load();
+
+    sinon.assert.called(error);
+    sinon.assert.calledWith(
+      error,
+      chalk.red(
+        `[ENV ERROR] failed to load '.env': Error: ENOENT: no such file or directory, open '.env'`
+      )
+    );
   });
 
   it('should accept a single mutator', () => {

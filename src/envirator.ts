@@ -49,7 +49,7 @@ export class Envirator implements EnvInitOptions {
   }
 
   load(options?: EnvLoadOptions): void;
-  load(path?: string): void;
+  load(path?: string, options?: EnvLoadOptions): void;
   load(path?: any, options: EnvLoadOptions = {}): void {
     if (isObject(path)) {
       options = path;
@@ -121,7 +121,7 @@ export class Envirator implements EnvInitOptions {
    * @returns {EnvManyResult}
    * @memberof Envirator
    */
-  provideMany(envars: EnvMany): EnvManyResult {
+  provideMany<T = EnvManyResult>(envars: EnvMany): T {
     return envars.reduce((memo, envar) => {
       const {
         key = envar as string,
@@ -134,7 +134,7 @@ export class Envirator implements EnvInitOptions {
         ...memo,
         [useKey]: this.provide(key, opts),
       };
-    }, {});
+    }, {} as T);
   }
 
   setEnv(key: string, value: any): void;
