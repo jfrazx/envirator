@@ -1,3 +1,6 @@
+import { KeyTo } from '../interfaces';
+import { asArray } from '@jfrazx/asarray';
+
 export function isString(value: any): value is string {
   return typeof value === 'string';
 }
@@ -19,4 +22,17 @@ export function toJsProperty(key: string) {
         : part.toLowerCase()
     )
     .join('');
+}
+
+export function determineKey(
+  key: string,
+  toJsProp: boolean,
+  keyTo: string | KeyTo | KeyTo[]
+): string {
+  const use = isString(keyTo) ? [() => keyTo] : asArray(keyTo);
+  return mutateProperty(key, toJsProp ? [toJsProperty, ...use] : use);
+}
+
+function mutateProperty(key: string, mutators: KeyTo[]): string {
+  return mutators.reduce((k, mutator) => mutator(k), key);
 }

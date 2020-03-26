@@ -21,9 +21,9 @@ Use `Envirator` to provide and manipulate environment variables.
 ```typescript
 import { Envirator } from '@status/envirator';
 
-const envirator = new Envirator();
+const env = new Envirator();
 
-const port = envirator.provide('PORT');
+const port = env.provide('PORT');
 ```
 
 If `PORT` exists it will be of type `string`. Otherwise, a message will print to the console and immediately exit.
@@ -48,7 +48,7 @@ const envOpts: EnvInitOptions = {
   keyToJsProp: true,
 };
 
-const envirator = new Envirator(envOpts);
+const env = new Envirator(envOpts);
 ```
 
 ### Initialization Options
@@ -67,13 +67,13 @@ Load a config by specifying a path or based on the current environment.
 ```typescript
 import { Envirator } from '@status/envirator';
 
-const envirator = new Envirator();
+const env = new Envirator();
 
-envirator.load();
+env.load();
 
 // or
 
-envirator.load('./path/to/config');
+env.load('./path/to/config');
 ```
 
 Environment based loading expects a file named `.env.environment` in the root of your project. For example, a development based environment would attempt to load `.env.development`.  
@@ -87,7 +87,7 @@ Providing environment variables is what Envirator does best! There are a few opt
 import { Envirator, EnvOptions } from '@status/envirator';
 import * as winston from 'winston';
 
-const envirator = new Envirator();
+const env = new Envirator();
 
 const envOpts: EnvOptions = {
   warnOnly: true,
@@ -97,7 +97,7 @@ const envOpts: EnvOptions = {
   mutators: parseInt,
 };
 
-const port = envirator.provide<number>('PORT', envOpts);
+const port = env.provide<number>('PORT', envOpts);
 ```
 
 In addition to the three options previously discussed, you may provide a default value for use in the event an environment variable does not exist.  
@@ -108,7 +108,7 @@ A single function or an array of functions may be passed to modify the extracted
 Often you may need many environment variables.
 
 ```typescript
-import { EnvManyOptions } from '@status/codes';
+import { EnvManyOptions } from '@status/envirator';
 
 const envVar: EnvManyOptions = {
   key: 'SOME_VAR',
@@ -119,11 +119,52 @@ const envVar: EnvManyOptions = {
   keyToJsProp: true,
 };
 
-const { NODE_ENV, someVar, CONTENT: content } = envirator.provideMany([
+const { NODE_ENV, someVar, CONTENT: content } = env.provideMany([
   'NODE_ENV',
   envVar,
   { key: 'CONTENT' },
 ]);
+```
+
+Additionally you may wish to change the property or the entire shape of the returned object.
+
+```typescript
+const env = new Env({ keyToJsProp: true });
+
+interface JwtOptions {
+  secret: string;
+  signOptions: {
+    iss: string;
+    algorithm: string;
+  };
+}
+
+function toJwtOptions({ secret, iss, algorithm }: EnvManyResult): JwtOptions {
+  return {
+    secret,
+    signOptions: {
+      algorithm,
+      iss,
+    },
+  };
+}
+
+const jwtOptions: JwtOptions = env.provideMany(
+  [
+    { key: 'JWT_SECRET', keyTo: [() => 'secret'], defaultValue: 'token' },
+    {
+      key: 'JWT_ALGORITHM',
+      keyTo: key => 'algorithm',
+      defaultValue: 'RSA',
+    },
+    {
+      key: 'JWT_ISSUER',
+      keyTo: 'iss',
+      defaultValue: 'something',
+    },
+  ],
+  toJwtOptions
+);
 ```
 
 ### Set Values
@@ -133,9 +174,9 @@ You may set environment variables by passing an object or a single key value pai
 ```typescript
 import { Envirator } from '@status/envirator';
 
-const envirator = new Envirator();
+const env = new Envirator();
 
-envirator.setEnv('NODE_ENV', 'development');
+env.setEnv('NODE_ENV', 'development');
 
 const envVars = {
   PORT: 5200,
@@ -143,7 +184,7 @@ const envVars = {
   COOKIE: 'cookie-monster',
 };
 
-envirator.set(envVars);
+env.set(envVars);
 ```
 
 All values are set as strings. No checks are made to ensure the key currently does not exist.
@@ -153,7 +194,7 @@ All values are set as strings. No checks are made to ensure the key currently do
 Envirator also has a handy property that indicates if the current environment is production.
 
 ```typescript
-if (envirator.isProduction) {
+if (env.isProduction) {
   // do stuff
 }
 ```
@@ -161,10 +202,10 @@ if (envirator.isProduction) {
 You can retrieve or set the current environment:
 
 ```typescript
-envirator.currentEnv;
+env.currentEnv;
 // => development or whatever the current environment may be (always lowercase)
 
-envirator.currentEnv = 'test';
+env.currentEnv = 'test';
 // equivalent to 'envirator.setEnv('NODE_ENV', 'test');' NODE_ENV is whatever was set at initialization
 ```
 
@@ -205,8 +246,8 @@ Create a config that includes envirator to provide in other files.
 
 ```typescript
 export const config = {
-  environment: env.currentEnv,
   port: env.provide<number>('PORT', { mutators: parseInt }),
+  environment: env.currentEnv,
   env,
 };
 

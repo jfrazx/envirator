@@ -8,6 +8,8 @@
   "functions": 99,
   "branches": 95,
   "reporter": ["lcov", "text-summary", "html"],
+  "include": ["src/**/*.ts"],
+  "exclude": ["test/**/*.spec.ts"],
   "all": true,
   "cache": true,
   "report-dir": "./coverage",
