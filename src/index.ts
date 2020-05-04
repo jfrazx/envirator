@@ -187,7 +187,7 @@ export class Envirator implements EnvInitOptions {
 
     return isUndefined(env) && this.noDefaultEnv
       ? (this.exitOrWarn(this.nodeEnv, env, false, this.logger) as any)
-      : (env || Default.Development).toLowerCase();
+      : (env || Default.Development).toLowerCase().trim();
   }
 
   set currentEnv(env: string) {

@@ -134,17 +134,21 @@ const env = new Env({ keyToJsProp: true });
 interface JwtOptions {
   secret: string;
   signOptions: {
-    iss: string;
+    issuer: string;
     algorithm: string;
   };
 }
 
-function toJwtOptions({ secret, iss, algorithm }: EnvManyResult): JwtOptions {
+function toJwtOptions({
+  secret,
+  issuer,
+  algorithm,
+}: EnvManyResult): JwtOptions {
   return {
     secret,
     signOptions: {
       algorithm,
-      iss,
+      issuer,
     },
   };
 }
@@ -154,12 +158,12 @@ const jwtOptions: JwtOptions = env.provideMany(
     { key: 'JWT_SECRET', keyTo: [() => 'secret'], defaultValue: 'token' },
     {
       key: 'JWT_ALGORITHM',
-      keyTo: key => 'algorithm',
+      keyTo: (key) => 'algorithm',
       defaultValue: 'RSA',
     },
     {
       key: 'JWT_ISSUER',
-      keyTo: 'iss',
+      keyTo: 'issuer',
       defaultValue: 'something',
     },
   ],
