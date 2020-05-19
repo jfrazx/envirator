@@ -12,6 +12,7 @@
     "coverage:check": "nyc check-coverage",
     "coverage:report": "nyc report --reporter=text-lcov > coverage.lcov",
     "coverage:post": "codecov",
+    "precoverage:test": "rimraf coverage",
     "coverage:test": "nyc mocha",
     "nyc": "nyc",
     "precommit": "npm run coverage:test && npm run coverage:check",

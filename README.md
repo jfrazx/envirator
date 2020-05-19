@@ -59,6 +59,7 @@ const env = new Envirator(envOpts);
 - `nodeEnv: string` :: Change where to locate the Node environment. Default is `NODE_ENV`
 - `noDefaultEnv: boolean` :: Specify if you do not want to provide a default environment if one is not set. Default is `false`
 - `keyToJsProp: boolean` :: If true, when calling provideMany, the requested environment variable key will be transformed to camelcase. Default is `false`
+- `envs: Environments` :: An object that allows overriding of `production`, `development`, `test` and `staging` strings
 
 ### Configs
 
@@ -195,13 +196,37 @@ All values are set as strings. No checks are made to ensure the key currently do
 
 ### Properties
 
-Envirator also has a handy property that indicates if the current environment is production.
+Envirator has several handy properties that indicate if the current environment is either `production`, `development`, `staging` or `test`.
 
 ```typescript
 if (env.isProduction) {
   // do stuff
 }
+if (env.isDevelopment) {
+  // do stuff
+}
+if (env.isStaging) {
+  // do stuff
+}
+if (env.isTest) {
+  // do stuff
+}
 ```
+
+You may override the default strings on initializaion:
+
+```typescript
+const env = new Env({
+  envs: {
+    test: 'testing',
+    staging: 'staged',
+    production: 'prod',
+    development: 'develop',
+  },
+});
+```
+
+Be aware that values will be lowercased.
 
 You can retrieve or set the current environment:
 

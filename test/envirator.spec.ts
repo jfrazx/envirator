@@ -30,38 +30,6 @@ describe('Envirator', () => {
 
       expect(envirator).to.not.be.undefined;
     });
-
-    it('should supply default values', () => {
-      const envirator = new Env();
-
-      expect(envirator.productionDefaults).to.be.false;
-      expect(envirator.warnOnly).to.be.false;
-      expect(envirator.logger).to.equal(console);
-      expect(envirator.nodeEnv).to.equal('NODE_ENV');
-      expect(envirator.noDefaultEnv).to.be.false;
-      expect(envirator.keyToJsProp).to.be.false;
-    });
-
-    it('should allow defaults to be overriden', () => {
-      const envirator = new Envirator({
-        productionDefaults: true,
-        warnOnly: true,
-        logger: {
-          warn: console.log,
-          error: console.error,
-        },
-        nodeEnv: 'NODE_ENVIRONMENT',
-        noDefaultEnv: true,
-        keyToJsProp: true,
-      });
-
-      expect(envirator.productionDefaults).to.be.true;
-      expect(envirator.warnOnly).to.be.true;
-      expect(envirator.logger).to.not.equal(console);
-      expect(envirator.nodeEnv).to.equal('NODE_ENVIRONMENT');
-      expect(envirator.noDefaultEnv).to.be.true;
-      expect(envirator.keyToJsProp).to.be.true;
-    });
   });
 
   describe('Behavior', () => {
@@ -71,6 +39,7 @@ describe('Envirator', () => {
       const warn = sinon.stub(console, 'warn');
 
       expect(envirator.provide('SOME_ENV_VAR')).to.be.undefined;
+
       sinon.assert.called(warn);
       sinon.assert.calledWith(
         warn,
@@ -205,7 +174,7 @@ describe('Envirator', () => {
         SYMBLZZ: Symbol('something'),
       };
 
-      Object.keys(enVars).forEach(key => {
+      Object.keys(enVars).forEach((key) => {
         expect(envirator.provide(key)).to.be.undefined;
       });
 
@@ -269,20 +238,6 @@ describe('Envirator', () => {
           productionDefaults: true,
         })
       ).to.equal('someValue');
-    });
-
-    it('should provide a boolean based on if production environment', () => {
-      const env = new Envirator();
-
-      env.setEnv('NODE_ENV', 'test');
-
-      expect(env.isProduction).to.be.false;
-
-      env.setEnv('NODE_ENV', 'production');
-      expect(env.isProduction).to.be.true;
-
-      env.setEnv('NODE_ENV', 'development');
-      expect(env.isProduction).to.be.false;
     });
   });
 
@@ -496,7 +451,7 @@ describe('Envirator', () => {
         },
         {
           key: 'SOME_ENV_VAR',
-          keyTo: value => `${value}Key`,
+          keyTo: (value) => `${value}Key`,
           defaultValue: 'something',
         },
       ]);
@@ -555,6 +510,113 @@ describe('Envirator', () => {
       expect(jwtOptions.signOptions).to.be.an('object');
       expect(jwtOptions.signOptions.algorithm).to.equal('RSA');
       expect(jwtOptions.signOptions.iss).to.equal('something');
+    });
+  });
+
+  describe('Environments', () => {
+    it('should provide a boolean based on if production environment', () => {
+      const env = new Envirator();
+
+      env.setEnv('NODE_ENV', 'test');
+      expect(env.isProduction).to.be.false;
+
+      env.setEnv('NODE_ENV', 'production');
+      expect(env.isProduction).to.be.true;
+
+      env.setEnv('NODE_ENV', 'development');
+      expect(env.isProduction).to.be.false;
+
+      env.setEnv('NODE_ENV', 'staging');
+      expect(env.isProduction).to.be.false;
+    });
+
+    it('should provide a boolean based on if staging environment', () => {
+      const env = new Envirator();
+
+      env.setEnv('NODE_ENV', 'test');
+      expect(env.isStaging).to.be.false;
+
+      env.setEnv('NODE_ENV', 'production');
+      expect(env.isStaging).to.be.false;
+
+      env.setEnv('NODE_ENV', 'development');
+      expect(env.isStaging).to.be.false;
+
+      env.setEnv('NODE_ENV', 'staging');
+      expect(env.isStaging).to.be.true;
+    });
+
+    it('should provide a boolean based on if development environment', () => {
+      const env = new Envirator();
+
+      env.setEnv('NODE_ENV', 'test');
+      expect(env.isDevelopment).to.be.false;
+
+      env.setEnv('NODE_ENV', 'production');
+      expect(env.isDevelopment).to.be.false;
+
+      env.setEnv('NODE_ENV', 'development');
+      expect(env.isDevelopment).to.be.true;
+
+      env.setEnv('NODE_ENV', 'staging');
+      expect(env.isDevelopment).to.be.false;
+    });
+
+    it('should provide a boolean based on if test environment', () => {
+      const env = new Envirator();
+
+      env.setEnv('NODE_ENV', 'test');
+      expect(env.isTest).to.be.true;
+
+      env.setEnv('NODE_ENV', 'production');
+      expect(env.isTest).to.be.false;
+
+      env.setEnv('NODE_ENV', 'development');
+      expect(env.isTest).to.be.false;
+
+      env.setEnv('NODE_ENV', 'staging');
+      expect(env.isTest).to.be.false;
+    });
+
+    it('should allow environment name overrides', () => {
+      const nodeEnv = 'NODE_ENV';
+      const test = 'TESTs';
+      const production = 'Prod';
+      const staging = 'Stagings';
+      const development = 'DevelopMents';
+
+      const env = new Envirator({
+        envs: {
+          test,
+          staging,
+          production,
+          development,
+        },
+      });
+
+      env.setEnv(nodeEnv, 'test');
+      expect(env.isTest).to.be.false;
+
+      env.setEnv(nodeEnv, 'production');
+      expect(env.isProduction).to.be.false;
+
+      env.setEnv(nodeEnv, 'development');
+      expect(env.isDevelopment).to.be.false;
+
+      env.setEnv(nodeEnv, 'staging');
+      expect(env.isStaging).to.be.false;
+
+      env.setEnv(nodeEnv, staging);
+      expect(env.isStaging).to.be.true;
+
+      env.setEnv(nodeEnv, development);
+      expect(env.isDevelopment).to.be.true;
+
+      env.setEnv(nodeEnv, test);
+      expect(env.isTest).to.be.true;
+
+      env.setEnv(nodeEnv, production);
+      expect(env.isProduction).to.be.true;
     });
   });
 });

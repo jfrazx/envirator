@@ -3,7 +3,8 @@ import * as dotenv from 'dotenv';
 import chalk from 'chalk';
 
 import { isString, isUndefined, isObject, determineKey } from './helpers';
-import { Default, Level } from './enums';
+import { EnvOptionsContainer } from './options/index';
+import { Level, Environment } from './enums';
 import {
   EnvMany,
   ResultTo,
@@ -18,28 +19,11 @@ import {
 
 const defaultMutator = <T = string>(value: T) => value;
 
-export class Envirator implements EnvInitOptions {
-  readonly productionDefaults: boolean;
-  readonly noDefaultEnv: boolean;
-  readonly keyToJsProp: boolean;
-  readonly logger: EnvLogger;
-  readonly warnOnly: boolean;
-  readonly nodeEnv: string;
+export class Envirator {
+  private readonly opts: EnvOptionsContainer;
 
-  constructor({
-    productionDefaults = false,
-    nodeEnv = Default.NodeEnv,
-    noDefaultEnv = false,
-    keyToJsProp = false,
-    logger = console,
-    warnOnly = false,
-  }: EnvInitOptions = {}) {
-    this.logger = logger;
-    this.nodeEnv = nodeEnv;
-    this.warnOnly = warnOnly;
-    this.keyToJsProp = keyToJsProp;
-    this.noDefaultEnv = noDefaultEnv;
-    this.productionDefaults = productionDefaults;
+  constructor(options: EnvInitOptions = {}) {
+    this.opts = new EnvOptionsContainer(options);
   }
 
   private genFilePath(env: string, path: string | undefined): string {
@@ -67,13 +51,14 @@ export class Envirator implements EnvInitOptions {
     }
 
     const {
-      logger = this.logger,
-      nodeEnv = this.nodeEnv,
+      logger = this.opts.logger,
+      nodeEnv = this.opts.nodeEnv,
       config = {},
     } = options;
 
     const env = (
-      process.env[nodeEnv] || (this.noDefaultEnv ? '' : Default.Development)
+      process.env[nodeEnv] ||
+      (this.opts.noDefaultEnv ? '' : Environment.Development)
     ).toLowerCase();
 
     path = this.genFilePath(env, path || config.path);
@@ -107,11 +92,11 @@ export class Envirator implements EnvInitOptions {
   provide<T = string>(
     key: string,
     {
-      defaultValue,
       mutators,
-      productionDefaults = this.productionDefaults,
-      logger = this.logger,
-      warnOnly = this.warnOnly,
+      defaultValue,
+      logger = this.opts.logger,
+      warnOnly = this.opts.warnOnly,
+      productionDefaults = this.opts.productionDefaults,
     }: EnvOptions = {}
   ): T {
     const value = this.defaultEnv(key, defaultValue, productionDefaults);
@@ -139,7 +124,7 @@ export class Envirator implements EnvInitOptions {
       envars.reduce((memo, envar) => {
         const {
           key = envar as string,
-          keyToJsProp = this.keyToJsProp,
+          keyToJsProp = this.opts.keyToJsProp,
           keyTo = defaultMutator,
         } = envar as EnvManyOptions;
         const opts: EnvOptions = isString(envar) ? {} : envar;
@@ -173,7 +158,40 @@ export class Envirator implements EnvInitOptions {
    * @memberof Envirator
    */
   get isProduction(): boolean {
-    return this.currentEnv === Default.Production;
+    return this.currentEnv === this.opts.envs.production;
+  }
+
+  /**
+   * Property that indicates if the current environment is development
+   *
+   * @readonly
+   * @type {boolean}
+   * @memberof Envirator
+   */
+  get isDevelopment(): boolean {
+    return this.currentEnv === this.opts.envs.development;
+  }
+
+  /**
+   * Property that indicates if the current environment is test
+   *
+   * @readonly
+   * @type {boolean}
+   * @memberof Envirator
+   */
+  get isTest(): boolean {
+    return this.currentEnv === this.opts.envs.test;
+  }
+
+  /**
+   * Property that indicates if the current environment is staging
+   *
+   * @readonly
+   * @type {boolean}
+   * @memberof Envirator
+   */
+  get isStaging(): boolean {
+    return this.currentEnv === this.opts.envs.staging;
   }
 
   /**
@@ -183,15 +201,20 @@ export class Envirator implements EnvInitOptions {
    * @memberof Envirator
    */
   get currentEnv(): string {
-    const env = process.env[this.nodeEnv];
+    const env = process.env[this.opts.nodeEnv];
 
-    return isUndefined(env) && this.noDefaultEnv
-      ? (this.exitOrWarn(this.nodeEnv, env, false, this.logger) as any)
-      : (env || Default.Development).toLowerCase().trim();
+    return isUndefined(env) && this.opts.noDefaultEnv
+      ? (this.exitOrWarn(
+          this.opts.nodeEnv,
+          env,
+          false,
+          this.opts.logger
+        ) as any)
+      : (env || this.opts.envs.development).toLowerCase().trim();
   }
 
   set currentEnv(env: string) {
-    this.setEnv(this.nodeEnv, env);
+    this.setEnv(this.opts.nodeEnv, env);
   }
 
   /**
@@ -247,6 +270,6 @@ export class Envirator implements EnvInitOptions {
   }
 }
 
+export { Environment } from './enums';
 export * from './interfaces';
-
 export const Env = Envirator;
