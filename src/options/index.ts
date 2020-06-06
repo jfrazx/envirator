@@ -38,7 +38,7 @@ export class EnvOptionsContainer implements Required<EnvInitOptions> {
     }).reduce(
       (memo, [key, value]) => ({
         ...memo,
-        [key]: value.toLocaleLowerCase(),
+        [key]: value.toLowerCase(),
       }),
       {}
     ) as Required<Environments>;

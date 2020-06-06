@@ -1,10 +1,15 @@
-import { Envirator, EnvManyOptions, Env, EnvManyResult } from '../src';
+import * as winston from 'winston';
+import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { join } from 'path';
 import chalk from 'chalk';
-
-import * as winston from 'winston';
-import * as sinon from 'sinon';
+import {
+  Env,
+  Envirator,
+  Environment,
+  EnvManyResult,
+  EnvManyOptions,
+} from '../src';
 
 describe('Envirator', () => {
   let originalEnv: any;
@@ -594,16 +599,16 @@ describe('Envirator', () => {
         },
       });
 
-      env.setEnv(nodeEnv, 'test');
+      env.setEnv(nodeEnv, Environment.Test);
       expect(env.isTest).to.be.false;
 
-      env.setEnv(nodeEnv, 'production');
+      env.setEnv(nodeEnv, Environment.Production);
       expect(env.isProduction).to.be.false;
 
-      env.setEnv(nodeEnv, 'development');
+      env.setEnv(nodeEnv, Environment.Development);
       expect(env.isDevelopment).to.be.false;
 
-      env.setEnv(nodeEnv, 'staging');
+      env.setEnv(nodeEnv, Environment.Staging);
       expect(env.isStaging).to.be.false;
 
       env.setEnv(nodeEnv, staging);

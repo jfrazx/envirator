@@ -4,7 +4,7 @@ import chalk from 'chalk';
 
 import { isString, isUndefined, isObject, determineKey } from './helpers';
 import { EnvOptionsContainer } from './options/index';
-import { Level, Environment } from './enums';
+import { Level } from './enums';
 import {
   EnvMany,
   ResultTo,
@@ -58,7 +58,7 @@ export class Envirator {
 
     const env = (
       process.env[nodeEnv] ||
-      (this.opts.noDefaultEnv ? '' : Environment.Development)
+      (this.opts.noDefaultEnv ? '' : this.opts.envs.development)
     ).toLowerCase();
 
     path = this.genFilePath(env, path || config.path);

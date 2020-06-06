@@ -1,5 +1,5 @@
-import { KeyTo } from '../interfaces';
 import { asArray } from '@jfrazx/asarray';
+import { KeyTo } from '../interfaces';
 
 export function isString(value: any): value is string {
   return typeof value === 'string';
