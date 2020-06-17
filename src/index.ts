@@ -2,9 +2,17 @@ import { asArray } from '@jfrazx/asarray';
 import * as dotenv from 'dotenv';
 import chalk from 'chalk';
 
-import { isString, isUndefined, isObject, determineKey } from './helpers';
-import { EnvOptionsContainer } from './options/index';
+import { EnvOptionsContainer } from './options';
 import { Level } from './enums';
+
+import {
+  isObject,
+  isString,
+  toLowerCase,
+  isUndefined,
+  determineKey,
+} from './helpers';
+
 import {
   EnvMany,
   ResultTo,
@@ -30,7 +38,7 @@ export class Envirator {
     return isUndefined(path) ? `.env${env ? '.' : env}${env}` : path;
   }
 
-  private exit(message: string, logger: EnvLogger): void {
+  private exit(message: string, logger: EnvLogger): never {
     logger.error(message);
     process.exit(1);
   }
@@ -51,8 +59,8 @@ export class Envirator {
     }
 
     const {
-      logger = this.opts.logger,
       nodeEnv = this.opts.nodeEnv,
+      logger = this.opts.logger,
       config = {},
     } = options;
 
@@ -124,8 +132,8 @@ export class Envirator {
       envars.reduce((memo, envar) => {
         const {
           key = envar as string,
-          keyToJsProp = this.opts.keyToJsProp,
           keyTo = defaultMutator,
+          keyToJsProp = this.opts.keyToJsProp,
         } = envar as EnvManyOptions;
         const opts: EnvOptions = isString(envar) ? {} : envar;
         const useKey = determineKey(key, keyToJsProp, keyTo);
@@ -139,7 +147,7 @@ export class Envirator {
   }
 
   setEnv(key: string, value: any): void;
-  setEnv(enVars: { [key: string]: any }): void;
+  setEnv(enVars: EnvManyResult): void;
   setEnv(env: any, enValue?: any): void {
     if (isString(env)) {
       env = { [env]: enValue };
@@ -201,16 +209,12 @@ export class Envirator {
    * @memberof Envirator
    */
   get currentEnv(): string {
-    const env = process.env[this.opts.nodeEnv];
+    const { envs, nodeEnv, noDefaultEnv, logger } = this.opts;
+    const env = process.env[nodeEnv];
 
-    return isUndefined(env) && this.opts.noDefaultEnv
-      ? (this.exitOrWarn(
-          this.opts.nodeEnv,
-          env,
-          false,
-          this.opts.logger
-        ) as any)
-      : (env || this.opts.envs.development).toLowerCase().trim();
+    return isUndefined(env) && noDefaultEnv
+      ? (this.exitOrWarn(nodeEnv, env, false, logger) as any)
+      : toLowerCase(env || envs.development);
   }
 
   set currentEnv(env: string) {
@@ -233,13 +237,16 @@ export class Envirator {
     value: string | undefined,
     warnOnly: boolean,
     logger: EnvLogger
-  ): void {
+  ): void | never {
     if (isUndefined(value)) {
       const level = '%level%';
       const message = `[ENV ${level}]: Missing environment variable '${key}'`;
 
       if (this.shouldExit(warnOnly)) {
-        return this.exit(chalk.red(message.replace(level, 'ERROR')), logger);
+        return this.exit(
+          chalk.red(message.replace(level, Level.Error)),
+          logger
+        );
       }
 
       logger.warn(chalk.yellow(message.replace(level, Level.Warn)));
@@ -247,26 +254,26 @@ export class Envirator {
   }
 
   private shouldExit(warnOnly: boolean): boolean {
-    return !warnOnly || this.isProduction;
+    return !warnOnly || this.opts.doNotWarnIn.includes(this.currentEnv);
   }
 
   private defaultEnv(
     key: string,
     defaultValue: any,
-    productionDefaults: boolean
+    provideDefaults: boolean
   ): string | undefined {
     const value = process.env[key];
 
     return !isUndefined(value) ||
-      this.shouldNotProvideProductionDefaults(productionDefaults)
+      this.shouldNotProvideProductionDefaults(provideDefaults)
       ? value
       : defaultValue;
   }
 
   private shouldNotProvideProductionDefaults(
-    productionDefaults: boolean
+    provideDefaults: boolean
   ): boolean {
-    return !productionDefaults && this.isProduction;
+    return !provideDefaults && this.isProduction;
   }
 }
 

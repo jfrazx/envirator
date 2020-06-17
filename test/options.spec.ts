@@ -6,7 +6,8 @@ describe('EnvOptionsContainer', () => {
   describe('General', () => {
     it('should supply default values', () => {
       const options = new EnvOptionsContainer();
-      const { envs } = options;
+      const { envs, doNotWarnIn } = options;
+      const [prod] = doNotWarnIn;
 
       expect(options.productionDefaults).to.be.false;
       expect(options.warnOnly).to.be.false;
@@ -16,6 +17,10 @@ describe('EnvOptionsContainer', () => {
       expect(options.keyToJsProp).to.be.false;
       expect(envs).to.be.an('object');
       expect(Object.keys(envs)).to.have.lengthOf(4);
+
+      expect(doNotWarnIn).to.be.an('array');
+      expect(doNotWarnIn).to.have.lengthOf(1);
+      expect(prod).to.equal(Environment.Production);
 
       expect(envs.development).to.equal(Environment.Development);
       expect(envs.production).to.equal(Environment.Production);
@@ -34,7 +39,15 @@ describe('EnvOptionsContainer', () => {
         nodeEnv: 'NODE_ENVIRONMENT',
         noDefaultEnv: true,
         keyToJsProp: true,
+        doNotWarnIn: [Environment.Test, Environment.Staging],
       });
+
+      const { doNotWarnIn } = options;
+      expect(doNotWarnIn).to.be.an('array');
+      expect(doNotWarnIn).to.have.lengthOf(2);
+      expect(doNotWarnIn).to.include(Environment.Test);
+      expect(doNotWarnIn).to.include(Environment.Staging);
+      expect(doNotWarnIn).to.not.include(Environment.Production);
 
       expect(options.productionDefaults).to.be.true;
       expect(options.warnOnly).to.be.true;
@@ -61,12 +74,17 @@ describe('EnvOptionsContainer', () => {
         },
       });
 
-      const { envs } = opts;
+      const {
+        envs,
+        doNotWarnIn: [prod],
+      } = opts;
 
       expect(envs.development).to.equal(development.toLowerCase());
       expect(envs.production).to.equal(production.toLowerCase());
       expect(envs.staging).to.equal(staging.toLowerCase());
       expect(envs.test).to.equal(test.toLowerCase());
+
+      expect(prod).to.equal(envs.production);
     });
 
     it('should allow creating new environments', () => {

@@ -40,26 +40,43 @@ import { Envirator, EnvInitOptions } from '@status/envirator';
 import * as winston from 'winston';
 
 const envOpts: EnvInitOptions = {
-  logger: winston,
   warnOnly: true,
-  productionDefaults: true,
-  nodeEnv: 'NODE_ENVIRONMENT',
-  noDefaultEnv: true,
+  logger: winston,
   keyToJsProp: true,
+  noDefaultEnv: true,
+  productionDefaults: true,
+  doNotWarnIn: ['production'],
+  nodeEnv: 'NODE_ENVIRONMENT',
 };
 
 const env = new Envirator(envOpts);
 ```
 
+You may override the default environment strings on initializaion:
+
+```typescript
+const env = new Env({
+  envs: {
+    test: 'testing',
+    staging: 'staged',
+    production: 'prod',
+    development: 'develop',
+  },
+});
+```
+
+Be aware that values will be lowercased.
+
 ### Initialization Options
 
-- `logger: EnvLogger` :: Prints warning and error messages to the terminal. Default is `console` object.
-- `warnOnly: boolean` :: Warn of missing environment variables rather than exit. Does nothing in production environment. Default is `false`
-- `productionDefaults: boolean` :: Specifies if supplied default values should be allowed in a production environment. Default is `false`
 - `nodeEnv: string` :: Change where to locate the Node environment. Default is `NODE_ENV`
-- `noDefaultEnv: boolean` :: Specify if you do not want to provide a default environment if one is not set. Default is `false`
-- `keyToJsProp: boolean` :: If true, when calling provideMany, the requested environment variable key will be transformed to camelcase. Default is `false`
+- `logger: EnvLogger` :: Prints warning and error messages to the terminal. Default is `console` object.
 - `envs: Environments` :: An object that allows overriding of `production`, `development`, `test` and `staging` strings
+- `noDefaultEnv: boolean` :: Specify if you do not want to provide a default environment if one is not set. Default is `false`
+- `productionDefaults: boolean` :: Specifies if supplied default values should be allowed in a production environment. Default is `false`
+- `warnOnly: boolean` :: Warn of missing environment variables rather than exit. Does nothing in production environment. Default is `false`
+- `keyToJsProp: boolean` :: If true, when calling provideMany, the requested environment variable key will be transformed to camelcase. Default is `false`
+- `doNotWarnIn: string[]` :: An array of Environment strings in which `warnOnly` is ignored and missing environment variables will force program exit. Default is `['production']`
 
 ### Configs
 
@@ -92,16 +109,16 @@ const env = new Envirator();
 
 const envOpts: EnvOptions = {
   warnOnly: true,
-  productionDefaults: true,
   logger: winston,
   defaultValue: 4800,
   mutators: parseInt,
+  productionDefaults: true,
 };
 
 const port = env.provide<number>('PORT', envOpts);
 ```
 
-In addition to the three options previously discussed, you may provide a default value for use in the event an environment variable does not exist.  
+In addition to the three options previously discussed (warnOnly, logger, productionDefaults), you may provide a default value for use in the event an environment variable does not exist.  
 A single function or an array of functions may be passed to modify the extracted value.
 
 ---
@@ -113,11 +130,11 @@ import { EnvManyOptions } from '@status/envirator';
 
 const envVar: EnvManyOptions = {
   key: 'SOME_VAR',
-  defaultValue: 3400,
   warnOnly: true,
-  productionDefaults: false,
-  mutators: parseInt,
   keyToJsProp: true,
+  defaultValue: 3400,
+  mutators: parseInt,
+  productionDefaults: false,
 };
 
 const { NODE_ENV, someVar, CONTENT: content } = env.provideMany([
@@ -213,21 +230,6 @@ if (env.isTest) {
 }
 ```
 
-You may override the default strings on initializaion:
-
-```typescript
-const env = new Env({
-  envs: {
-    test: 'testing',
-    staging: 'staged',
-    production: 'prod',
-    development: 'develop',
-  },
-});
-```
-
-Be aware that values will be lowercased.
-
 You can retrieve or set the current environment:
 
 ```typescript
@@ -286,4 +288,17 @@ import { config } from './config';
 const { env } = config;
 
 const dbPass = env.provide('DB_PASSWORD', { warnOnly: true });
+```
+
+Modify the built-in environments and disallow warnings.
+
+```typescript
+const env = new Envirator({
+  envs: {
+    production: 'prod',
+    development: 'develop',
+  },
+  warnOnly: true,
+  doNotWarnIn: ['prod', 'staging'],
+});
 ```

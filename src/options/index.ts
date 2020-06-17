@@ -1,9 +1,10 @@
 import { EnvInitOptions, EnvLogger, Environments } from '../interfaces';
 import { Default, Environment } from '../enums';
+import { toLowerCase } from '../helpers';
 
 const defaultEnvs: Required<Environments> = {
-  production: Environment.Production,
   development: Environment.Development,
+  production: Environment.Production,
   staging: Environment.Staging,
   test: Environment.Test,
 };
@@ -11,6 +12,7 @@ const defaultEnvs: Required<Environments> = {
 export class EnvOptionsContainer implements Required<EnvInitOptions> {
   readonly envs: Required<Environments>;
   readonly productionDefaults: boolean;
+  readonly doNotWarnIn: string[];
   readonly noDefaultEnv: boolean;
   readonly keyToJsProp: boolean;
   readonly logger: EnvLogger;
@@ -24,6 +26,7 @@ export class EnvOptionsContainer implements Required<EnvInitOptions> {
     keyToJsProp = false,
     logger = console,
     warnOnly = false,
+    doNotWarnIn,
     envs = {},
   }: EnvInitOptions = {}) {
     this.logger = logger;
@@ -38,9 +41,11 @@ export class EnvOptionsContainer implements Required<EnvInitOptions> {
     }).reduce(
       (memo, [key, value]) => ({
         ...memo,
-        [key]: value.toLowerCase(),
+        [key]: toLowerCase(value),
       }),
       {}
     ) as Required<Environments>;
+
+    this.doNotWarnIn = doNotWarnIn?.map(toLowerCase) ?? [this.envs.production];
   }
 }

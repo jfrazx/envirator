@@ -1,38 +1,26 @@
 import { asArray } from '@jfrazx/asarray';
 import { KeyTo } from '../interfaces';
+import camelcase from 'camelcase';
 
-export function isString(value: any): value is string {
-  return typeof value === 'string';
-}
+const is = (type: string, value: any): boolean => typeof value === type;
 
-export function isUndefined(value: any): value is undefined {
-  return typeof value === 'undefined';
-}
+export const toLowerCase = (value: string) => value.toLowerCase().trim();
+export const isString = (value: any): value is string => is('string', value);
 
-export function isObject(value: any): value is object {
-  return typeof value === 'object';
-}
+export const isUndefined = (value: any): value is undefined =>
+  is('undefined', value);
 
-export function toJsProperty(key: string) {
-  return key
-    .split(/-|_/g)
-    .map((part, index) =>
-      index
-        ? part.charAt(0).toUpperCase() + part.substr(1).toLowerCase()
-        : part.toLowerCase()
-    )
-    .join('');
-}
+export const isObject = (value: any): value is object =>
+  value && !Array.isArray(value) && is('object', value);
 
-export function determineKey(
+export const determineKey = (
   key: string,
   toJsProp: boolean,
   keyTo: string | KeyTo | KeyTo[]
-): string {
+): string => {
   const use = isString(keyTo) ? [() => keyTo] : asArray(keyTo);
-  return mutateProperty(key, toJsProp ? [toJsProperty, ...use] : use);
-}
+  return mutateProperty(key, toJsProp ? [camelcase, ...use] : use);
+};
 
-function mutateProperty(key: string, mutators: KeyTo[]): string {
-  return mutators.reduce((k, mutator) => mutator(k), key);
-}
+const mutateProperty = (key: string, mutators: KeyTo[]): string =>
+  mutators.reduce((k, mutator) => mutator(k), key);

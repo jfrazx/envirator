@@ -1,15 +1,9 @@
+import { Env, Envirator, EnvManyResult, EnvManyOptions } from '../src';
 import * as winston from 'winston';
 import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { join } from 'path';
 import chalk from 'chalk';
-import {
-  Env,
-  Envirator,
-  Environment,
-  EnvManyResult,
-  EnvManyOptions,
-} from '../src';
 
 describe('Envirator', () => {
   let originalEnv: any;
@@ -34,6 +28,7 @@ describe('Envirator', () => {
       const envirator = new Envirator();
 
       expect(envirator).to.not.be.undefined;
+      expect(envirator).to.be.instanceOf(Envirator);
     });
   });
 
@@ -475,20 +470,20 @@ describe('Envirator', () => {
       interface JwtOptions {
         secret: string;
         signOptions: {
-          iss: string;
+          issuer: string;
           algorithm: string;
         };
       }
 
       function toJwtOptions({
         secret,
-        iss,
+        issuer,
         algorithm,
       }: EnvManyResult): JwtOptions {
         return {
           secret,
           signOptions: {
-            iss,
+            issuer,
             algorithm,
           },
         };
@@ -504,7 +499,7 @@ describe('Envirator', () => {
           },
           {
             key: 'JWT_ISSUER',
-            keyTo: 'iss',
+            keyTo: 'issuer',
             defaultValue: 'something',
           },
         ],
@@ -514,114 +509,7 @@ describe('Envirator', () => {
       expect(jwtOptions.secret).to.equal('token');
       expect(jwtOptions.signOptions).to.be.an('object');
       expect(jwtOptions.signOptions.algorithm).to.equal('RSA');
-      expect(jwtOptions.signOptions.iss).to.equal('something');
-    });
-  });
-
-  describe('Environments', () => {
-    it('should provide a boolean based on if production environment', () => {
-      const env = new Envirator();
-
-      env.setEnv('NODE_ENV', 'test');
-      expect(env.isProduction).to.be.false;
-
-      env.setEnv('NODE_ENV', 'production');
-      expect(env.isProduction).to.be.true;
-
-      env.setEnv('NODE_ENV', 'development');
-      expect(env.isProduction).to.be.false;
-
-      env.setEnv('NODE_ENV', 'staging');
-      expect(env.isProduction).to.be.false;
-    });
-
-    it('should provide a boolean based on if staging environment', () => {
-      const env = new Envirator();
-
-      env.setEnv('NODE_ENV', 'test');
-      expect(env.isStaging).to.be.false;
-
-      env.setEnv('NODE_ENV', 'production');
-      expect(env.isStaging).to.be.false;
-
-      env.setEnv('NODE_ENV', 'development');
-      expect(env.isStaging).to.be.false;
-
-      env.setEnv('NODE_ENV', 'staging');
-      expect(env.isStaging).to.be.true;
-    });
-
-    it('should provide a boolean based on if development environment', () => {
-      const env = new Envirator();
-
-      env.setEnv('NODE_ENV', 'test');
-      expect(env.isDevelopment).to.be.false;
-
-      env.setEnv('NODE_ENV', 'production');
-      expect(env.isDevelopment).to.be.false;
-
-      env.setEnv('NODE_ENV', 'development');
-      expect(env.isDevelopment).to.be.true;
-
-      env.setEnv('NODE_ENV', 'staging');
-      expect(env.isDevelopment).to.be.false;
-    });
-
-    it('should provide a boolean based on if test environment', () => {
-      const env = new Envirator();
-
-      env.setEnv('NODE_ENV', 'test');
-      expect(env.isTest).to.be.true;
-
-      env.setEnv('NODE_ENV', 'production');
-      expect(env.isTest).to.be.false;
-
-      env.setEnv('NODE_ENV', 'development');
-      expect(env.isTest).to.be.false;
-
-      env.setEnv('NODE_ENV', 'staging');
-      expect(env.isTest).to.be.false;
-    });
-
-    it('should allow environment name overrides', () => {
-      const nodeEnv = 'NODE_ENV';
-      const test = 'TESTs';
-      const production = 'Prod';
-      const staging = 'Stagings';
-      const development = 'DevelopMents';
-
-      const env = new Envirator({
-        envs: {
-          test,
-          staging,
-          production,
-          development,
-        },
-      });
-
-      env.setEnv(nodeEnv, Environment.Test);
-      expect(env.isTest).to.be.false;
-
-      env.setEnv(nodeEnv, Environment.Production);
-      expect(env.isProduction).to.be.false;
-
-      env.setEnv(nodeEnv, Environment.Development);
-      expect(env.isDevelopment).to.be.false;
-
-      env.setEnv(nodeEnv, Environment.Staging);
-      expect(env.isStaging).to.be.false;
-
-      env.setEnv(nodeEnv, staging);
-      expect(env.isStaging).to.be.true;
-
-      env.setEnv(nodeEnv, development);
-      expect(env.isDevelopment).to.be.true;
-
-      env.setEnv(nodeEnv, test);
-      expect(env.isTest).to.be.true;
-
-      env.setEnv(nodeEnv, production);
-      expect(env.isProduction).to.be.true;
+      expect(jwtOptions.signOptions.issuer).to.equal('something');
     });
   });
 });
