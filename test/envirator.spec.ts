@@ -370,6 +370,49 @@ describe('Envirator', () => {
       sinon.assert.called(process.exit as any);
       sinon.assert.calledWith(process.exit as any, 1);
     });
+
+    it('should provide environment based defaults', () => {
+      const env = new Envirator({
+        envs: { staging: 'staged', customEnv: 'custom' },
+        logger: winston,
+      });
+
+      const options = {
+        defaultsFor: {
+          test: 1234,
+          development: 3456,
+          staged: 3444,
+          custom: 9999,
+        },
+      };
+
+      env.currentEnv = 'test';
+
+      const testVar = env.provide('FORT', options);
+      expect(testVar).to.equal(1234);
+
+      env.currentEnv = 'staged';
+
+      const stagedVar = env.provide('FORT', options);
+      expect(stagedVar).to.equal(3444);
+
+      env.currentEnv = 'development';
+
+      const devVar = env.provide('FORT', options);
+      expect(devVar).to.equal(3456);
+
+      env.currentEnv = 'custom';
+
+      const customVar = env.provide('FORT', options);
+      expect(customVar).to.equal(9999);
+
+      env.currentEnv = 'none';
+
+      const noneVar = env.provide('FORT', options);
+      expect(noneVar).to.be.undefined;
+
+      sinon.assert.called(winston.error as any);
+    });
   });
 
   describe('ProvideMany', () => {

@@ -17,7 +17,6 @@ import {
   EnvMany,
   ResultTo,
   EnvLogger,
-  EnvMutator,
   EnvOptions,
   EnvManyResult,
   EnvInitOptions,
@@ -85,14 +84,16 @@ export class Envirator {
   /**
    * Retrieve an environment variable
    *
+   *
    * @template T
    * @param {string} key
    * @param {EnvOptions} [{
-   *       defaulValue,
    *       mutators,
-   *       logger = this.logger,
-   *       warnOnly = this.warnOnly,
-   *       productionDefaults = this.productionDefaults,
+   *       defaultValue,
+   *       defaultFor = {},
+   *       logger = this.opts.logger,
+   *       warnOnly = this.opts.warnOnly,
+   *       productionDefaults = this.opts.productionDefaults,
    *     }={}]
    * @returns {T}
    * @memberof Envirator
@@ -102,16 +103,21 @@ export class Envirator {
     {
       mutators,
       defaultValue,
+      defaultsFor = {},
       logger = this.opts.logger,
       warnOnly = this.opts.warnOnly,
       productionDefaults = this.opts.productionDefaults,
     }: EnvOptions = {}
   ): T {
-    const value = this.defaultEnv(key, defaultValue, productionDefaults);
+    const value = this.retrieveEnvironmentVariable(
+      key,
+      defaultValue ?? defaultsFor[this.currentEnv],
+      productionDefaults
+    );
 
     this.exitOrWarn(key, value, warnOnly, logger);
 
-    return asArray<EnvMutator<T>>(mutators as EnvMutator).reduce(
+    return asArray(mutators!).reduce(
       (memo: any, func) => func.call(null, memo),
       value
     ) as T;
@@ -257,7 +263,7 @@ export class Envirator {
     return !warnOnly || this.opts.doNotWarnIn.includes(this.currentEnv);
   }
 
-  private defaultEnv(
+  private retrieveEnvironmentVariable(
     key: string,
     defaultValue: any,
     provideDefaults: boolean

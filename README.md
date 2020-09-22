@@ -52,7 +52,7 @@ const envOpts: EnvInitOptions = {
 const env = new Envirator(envOpts);
 ```
 
-You may override the default environment strings on initializaion:
+You may override the default environment strings on initialization:
 
 ```typescript
 const env = new Env({
@@ -87,6 +87,7 @@ import { Envirator } from '@status/envirator';
 
 const env = new Envirator();
 
+// environment based config loading
 env.load();
 
 // or
@@ -121,6 +122,20 @@ const port = env.provide<number>('PORT', envOpts);
 In addition to the three options previously discussed (warnOnly, logger, productionDefaults), you may provide a default value for use in the event an environment variable does not exist.  
 A single function or an array of functions may be passed to modify the extracted value.
 
+You may have different default values based on the current environment. Overridden environments may be used.
+
+```typescript
+const envOpts: EnvOptions = {
+  defaultsFor: {
+    testable: 7623,
+    staging: 9999,
+    dev: 6543,
+  },
+  warnOnly: true,
+  productionDefaults: false,
+};
+```
+
 ---
 
 Often you may need many environment variables.
@@ -133,6 +148,7 @@ const envVar: EnvManyOptions = {
   warnOnly: true,
   keyToJsProp: true,
   defaultValue: 3400,
+  defaultsFor: { ... },
   mutators: parseInt,
   productionDefaults: false,
 };
