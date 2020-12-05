@@ -1,8 +1,8 @@
 interface Envs {
-  production?: string;
-  development?: string;
   test?: string;
   staging?: string;
+  production?: string;
+  development?: string;
 }
 
 interface EnvironmentIndex {

@@ -27,7 +27,7 @@ import {
 const defaultMutator = <T = string>(value: T) => value;
 
 export class Envirator {
-  private readonly opts: EnvOptionsContainer;
+  protected readonly opts: EnvOptionsContainer;
 
   constructor(options: EnvInitOptions = {}) {
     this.opts = new EnvOptionsContainer(options);
@@ -37,7 +37,7 @@ export class Envirator {
     return isUndefined(path) ? `.env${env ? '.' : env}${env}` : path;
   }
 
-  private exit(message: string, logger: EnvLogger): never {
+  protected exit(message: string, logger: EnvLogger): never {
     logger.error(message);
     process.exit(1);
   }
@@ -63,18 +63,15 @@ export class Envirator {
       config = {},
     } = options;
 
-    const env = (
-      process.env[nodeEnv] ||
-      (this.opts.noDefaultEnv ? '' : this.opts.envs.development)
-    ).toLowerCase();
+    const env = (process.env[nodeEnv] || this.opts.defaultEnv).toLowerCase();
 
-    path = this.genFilePath(env, path || config.path);
-    const envResult = dotenv.config({ ...config, path });
+    const usePath = this.genFilePath(env, path || config.path);
+    const envResult = dotenv.config({ ...config, path: usePath });
 
     if (envResult.error) {
       this.exit(
         chalk.red(
-          `[ENV ${Level.Error}] failed to load '${path}': ${envResult.error}`
+          `[ENV ${Level.Error}] failed to load '${usePath}': ${envResult.error}`
         ),
         logger
       );
@@ -215,12 +212,12 @@ export class Envirator {
    * @memberof Envirator
    */
   get currentEnv(): string {
-    const { envs, nodeEnv, noDefaultEnv, logger } = this.opts;
+    const { defaultEnv, nodeEnv, noDefaultEnv, logger } = this.opts;
     const env = process.env[nodeEnv];
 
     return isUndefined(env) && noDefaultEnv
       ? (this.exitOrWarn(nodeEnv, env, false, logger) as any)
-      : toLowerCase(env || envs.development);
+      : toLowerCase(env || defaultEnv);
   }
 
   set currentEnv(env: string) {
@@ -238,7 +235,7 @@ export class Envirator {
    * @returns {void}
    * @memberof Envirator
    */
-  private exitOrWarn(
+  protected exitOrWarn(
     key: string,
     value: string | undefined,
     warnOnly: boolean,
@@ -259,7 +256,7 @@ export class Envirator {
     }
   }
 
-  private shouldExit(warnOnly: boolean): boolean {
+  protected shouldExit(warnOnly: boolean): boolean {
     return !warnOnly || this.opts.doNotWarnIn.includes(this.currentEnv);
   }
 

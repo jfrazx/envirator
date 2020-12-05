@@ -2,6 +2,16 @@ import { Envirator, Environment } from '../src';
 import { expect } from 'chai';
 
 describe('Environments', () => {
+  let originalEnv: any;
+
+  before(() => {
+    originalEnv = { ...process.env };
+  });
+
+  afterEach(() => {
+    process.env = { ...originalEnv };
+  });
+
   it('should provide a boolean based on if production environment', () => {
     const env = new Envirator();
 

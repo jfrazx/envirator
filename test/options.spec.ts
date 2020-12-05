@@ -15,6 +15,7 @@ describe('EnvOptionsContainer', () => {
       expect(options.nodeEnv).to.equal('NODE_ENV');
       expect(options.noDefaultEnv).to.be.false;
       expect(options.keyToJsProp).to.be.false;
+      expect(options.defaultEnv).to.equal('development');
       expect(envs).to.be.an('object');
       expect(Object.keys(envs)).to.have.lengthOf(4);
 
@@ -53,16 +54,25 @@ describe('EnvOptionsContainer', () => {
       expect(options.warnOnly).to.be.true;
       expect(options.logger).to.not.equal(console);
       expect(options.nodeEnv).to.equal('NODE_ENVIRONMENT');
+      expect(options.defaultEnv).to.equal('');
       expect(options.noDefaultEnv).to.be.true;
       expect(options.keyToJsProp).to.be.true;
+    });
+
+    it('should allow overriding of the default environment', () => {
+      const options = new EnvOptionsContainer({
+        defaultEnv: Environment.Production,
+      });
+
+      expect(options.defaultEnv).to.equal(Environment.Production);
     });
   });
 
   describe('Environments', () => {
     it('should allow overriding the predefined environments', () => {
-      const test = 'TEST';
+      const test = 'TESTable';
       const production = 'Prod';
-      const development = 'DevelopMent';
+      const development = 'Develop';
       const staging = 'Staging';
 
       const opts = new EnvOptionsContainer({
@@ -85,6 +95,25 @@ describe('EnvOptionsContainer', () => {
       expect(envs.test).to.equal(test.toLowerCase());
 
       expect(prod).to.equal(envs.production);
+    });
+
+    it('should allow overriding of the default environment with defined environments', () => {
+      const test = 'TESTable';
+      const production = 'Prod';
+      const development = 'Develop';
+      const staging = 'Staging';
+
+      const options = new EnvOptionsContainer({
+        defaultEnv: Environment.Production,
+        envs: {
+          production,
+          development,
+          staging,
+          test,
+        },
+      });
+
+      expect(options.defaultEnv).to.equal('prod');
     });
 
     it('should allow creating new environments', () => {

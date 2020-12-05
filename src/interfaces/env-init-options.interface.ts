@@ -4,6 +4,7 @@ import { Environments } from './env-environments.interface';
 
 export interface EnvInitOptions extends EnvStartOptions, EnvConfigOptions {
   envs?: Environments;
+  defaultEnv?: string;
   keyToJsProp?: boolean;
   doNotWarnIn?: string[];
 }

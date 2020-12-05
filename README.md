@@ -44,6 +44,7 @@ const envOpts: EnvInitOptions = {
   logger: winston,
   keyToJsProp: true,
   noDefaultEnv: true,
+  defaultEnv: 'production',
   productionDefaults: true,
   doNotWarnIn: ['production'],
   nodeEnv: 'NODE_ENVIRONMENT',
@@ -52,7 +53,7 @@ const envOpts: EnvInitOptions = {
 const env = new Envirator(envOpts);
 ```
 
-You may override the default environment strings on initialization:
+You may override the default environment strings on initialization or provide custom environments:
 
 ```typescript
 const env = new Env({
@@ -61,17 +62,19 @@ const env = new Env({
     staging: 'staged',
     production: 'prod',
     development: 'develop',
+    custom: 'custom_env',
   },
 });
 ```
 
-Be aware that values will be lowercased.
+Be aware that values will be lower-cased.
 
 ### Initialization Options
 
 - `nodeEnv: string` :: Change where to locate the Node environment. Default is `NODE_ENV`
 - `logger: EnvLogger` :: Prints warning and error messages to the terminal. Default is `console` object.
 - `envs: Environments` :: An object that allows overriding of `production`, `development`, `test` and `staging` strings
+- `defaultEnv: string` :: Designate the default environment. This should be a key from the `envs` option. Default is `development`
 - `noDefaultEnv: boolean` :: Specify if you do not want to provide a default environment if one is not set. Default is `false`
 - `productionDefaults: boolean` :: Specifies if supplied default values should be allowed in a production environment. Default is `false`
 - `warnOnly: boolean` :: Warn of missing environment variables rather than exit. Does nothing in production environment. Default is `false`
