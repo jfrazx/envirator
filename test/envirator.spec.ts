@@ -1,9 +1,11 @@
 import { Env, Envirator, EnvManyResult, EnvManyOptions } from '../src';
-import * as winston from 'winston';
+import * as winstonOriginal from 'winston';
 import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { join } from 'path';
 import chalk from 'chalk';
+
+const winston = { ...winstonOriginal };
 
 describe('Envirator', () => {
   let originalEnv: any;

@@ -27,10 +27,10 @@ import {
 const defaultMutator = <T = string>(value: T) => value;
 
 export class Envirator {
-  protected readonly opts: EnvOptionsContainer;
+  protected readonly options: EnvOptionsContainer;
 
   constructor(options: EnvInitOptions = {}) {
-    this.opts = new EnvOptionsContainer(options);
+    this.options = new EnvOptionsContainer(options);
   }
 
   private genFilePath(env: string, path: string | undefined): string {
@@ -58,12 +58,12 @@ export class Envirator {
     }
 
     const {
-      nodeEnv = this.opts.nodeEnv,
-      logger = this.opts.logger,
+      nodeEnv = this.options.nodeEnv,
+      logger = this.options.logger,
       config = {},
     } = options;
 
-    const env = (process.env[nodeEnv] || this.opts.defaultEnv).toLowerCase();
+    const env = (process.env[nodeEnv] || this.options.defaultEnv).toLowerCase();
 
     const usePath = this.genFilePath(env, path || config.path);
     const envResult = dotenv.config({ ...config, path: usePath });
@@ -88,9 +88,9 @@ export class Envirator {
    *       mutators,
    *       defaultValue,
    *       defaultFor = {},
-   *       logger = this.opts.logger,
-   *       warnOnly = this.opts.warnOnly,
-   *       productionDefaults = this.opts.productionDefaults,
+   *       logger = this.options.logger,
+   *       warnOnly = this.options.warnOnly,
+   *       productionDefaults = this.options.productionDefaults,
    *     }={}]
    * @returns {T}
    * @memberof Envirator
@@ -101,9 +101,9 @@ export class Envirator {
       mutators,
       defaultValue,
       defaultsFor = {},
-      logger = this.opts.logger,
-      warnOnly = this.opts.warnOnly,
-      productionDefaults = this.opts.productionDefaults,
+      logger = this.options.logger,
+      warnOnly = this.options.warnOnly,
+      productionDefaults = this.options.productionDefaults,
     }: EnvOptions = {}
   ): T {
     const value = this.retrieveEnvironmentVariable(
@@ -136,7 +136,7 @@ export class Envirator {
         const {
           key = envar as string,
           keyTo = defaultMutator,
-          keyToJsProp = this.opts.keyToJsProp,
+          keyToJsProp = this.options.camelcase,
         } = envar as EnvManyOptions;
         const opts: EnvOptions = isString(envar) ? {} : envar;
         const useKey = determineKey(key, keyToJsProp, keyTo);
@@ -169,7 +169,7 @@ export class Envirator {
    * @memberof Envirator
    */
   get isProduction(): boolean {
-    return this.currentEnv === this.opts.envs.production;
+    return this.currentEnv === this.options.environments.production;
   }
 
   /**
@@ -180,7 +180,7 @@ export class Envirator {
    * @memberof Envirator
    */
   get isDevelopment(): boolean {
-    return this.currentEnv === this.opts.envs.development;
+    return this.currentEnv === this.options.environments.development;
   }
 
   /**
@@ -191,7 +191,7 @@ export class Envirator {
    * @memberof Envirator
    */
   get isTest(): boolean {
-    return this.currentEnv === this.opts.envs.test;
+    return this.currentEnv === this.options.environments.test;
   }
 
   /**
@@ -202,7 +202,7 @@ export class Envirator {
    * @memberof Envirator
    */
   get isStaging(): boolean {
-    return this.currentEnv === this.opts.envs.staging;
+    return this.currentEnv === this.options.environments.staging;
   }
 
   /**
@@ -212,7 +212,7 @@ export class Envirator {
    * @memberof Envirator
    */
   get currentEnv(): string {
-    const { defaultEnv, nodeEnv, noDefaultEnv, logger } = this.opts;
+    const { defaultEnv, nodeEnv, noDefaultEnv, logger } = this.options;
     const env = process.env[nodeEnv];
 
     return isUndefined(env) && noDefaultEnv
@@ -221,7 +221,7 @@ export class Envirator {
   }
 
   set currentEnv(env: string) {
-    this.setEnv(this.opts.nodeEnv, env);
+    this.setEnv(this.options.nodeEnv, env);
   }
 
   /**
@@ -257,7 +257,7 @@ export class Envirator {
   }
 
   protected shouldExit(warnOnly: boolean): boolean {
-    return !warnOnly || this.opts.doNotWarnIn.includes(this.currentEnv);
+    return !warnOnly || this.options.doNotWarnIn.includes(this.currentEnv);
   }
 
   private retrieveEnvironmentVariable(

@@ -2,16 +2,16 @@ import { Envirator, EnvInitOptions } from '../src';
 import { expect } from 'chai';
 
 class CustomEnv extends Envirator {
-  constructor({ envs = {}, ...options }: EnvInitOptions = {}) {
+  constructor({ environments = {}, ...options }: EnvInitOptions = {}) {
     super({
       ...options,
       defaultEnv: 'custom',
-      envs: { custom: 'my_custom_env', ...envs },
+      environments: { custom: 'my_custom_env', ...environments },
     });
   }
 
   get isCustom() {
-    return this.currentEnv === this.opts.envs.custom;
+    return this.currentEnv === this.options.environments.custom;
   }
 }
 
@@ -43,5 +43,14 @@ describe('Extend', () => {
     const env = new CustomEnv();
 
     expect(env.isCustom).to.be.true;
+  });
+
+  it('should return false for all other env helpers', () => {
+    const env = new CustomEnv();
+
+    expect(env.isDevelopment).to.be.false;
+    expect(env.isProduction).to.be.false;
+    expect(env.isStaging).to.be.false;
+    expect(env.isTest).to.be.false;
   });
 });
