@@ -6,7 +6,7 @@ describe('EnvOptionsContainer', () => {
   describe('General', () => {
     it('should supply default values', () => {
       const options = new EnvOptionsContainer();
-      const { envs, doNotWarnIn } = options;
+      const { environments, doNotWarnIn } = options;
       const [prod] = doNotWarnIn;
 
       expect(options.productionDefaults).to.be.false;
@@ -14,21 +14,22 @@ describe('EnvOptionsContainer', () => {
       expect(options.logger).to.equal(console);
       expect(options.nodeEnv).to.equal('NODE_ENV');
       expect(options.noDefaultEnv).to.be.false;
-      expect(options.keyToJsProp).to.be.false;
-      expect(envs).to.be.an('object');
-      expect(Object.keys(envs)).to.have.lengthOf(4);
+      expect(options.camelcase).to.be.false;
+      expect(options.defaultEnv).to.equal('development');
+      expect(environments).to.be.an('object');
+      expect(Object.keys(environments)).to.have.lengthOf(4);
 
       expect(doNotWarnIn).to.be.an('array');
       expect(doNotWarnIn).to.have.lengthOf(1);
       expect(prod).to.equal(Environment.Production);
 
-      expect(envs.development).to.equal(Environment.Development);
-      expect(envs.production).to.equal(Environment.Production);
-      expect(envs.staging).to.equal(Environment.Staging);
-      expect(envs.test).to.equal(Environment.Test);
+      expect(environments.development).to.equal(Environment.Development);
+      expect(environments.production).to.equal(Environment.Production);
+      expect(environments.staging).to.equal(Environment.Staging);
+      expect(environments.test).to.equal(Environment.Test);
     });
 
-    it('should allow defaults to be overriden', () => {
+    it('should allow defaults to be overridden', () => {
       const options = new EnvOptionsContainer({
         productionDefaults: true,
         warnOnly: true,
@@ -38,7 +39,7 @@ describe('EnvOptionsContainer', () => {
         },
         nodeEnv: 'NODE_ENVIRONMENT',
         noDefaultEnv: true,
-        keyToJsProp: true,
+        camelcase: true,
         doNotWarnIn: [Environment.Test, Environment.Staging],
       });
 
@@ -53,20 +54,71 @@ describe('EnvOptionsContainer', () => {
       expect(options.warnOnly).to.be.true;
       expect(options.logger).to.not.equal(console);
       expect(options.nodeEnv).to.equal('NODE_ENVIRONMENT');
+      expect(options.defaultEnv).to.equal('');
       expect(options.noDefaultEnv).to.be.true;
-      expect(options.keyToJsProp).to.be.true;
+      expect(options.camelcase).to.be.true;
+    });
+
+    it('should allow overriding of the default environment', () => {
+      const options = new EnvOptionsContainer({
+        defaultEnv: Environment.Production,
+      });
+
+      expect(options.defaultEnv).to.equal(Environment.Production);
+    });
+  });
+
+  describe('Deprecated', () => {
+    it('should assign deprecated keyToJsProp option to camelcase', () => {
+      const options = new EnvOptionsContainer({
+        keyToJsProp: true,
+      });
+
+      expect(options.camelcase).to.be.true;
+    });
+
+    it('should prioritize camelcase over keyToJsProp', () => {
+      const options = new EnvOptionsContainer({
+        camelcase: false,
+        keyToJsProp: true,
+      });
+
+      expect(options.camelcase).to.be.false;
+    });
+
+    it('should assign deprecated envs option to environments', () => {
+      const options = new EnvOptionsContainer({
+        envs: {
+          development: 'develop',
+        },
+      });
+
+      expect(options.environments.development).to.be.equal('develop');
+    });
+
+    it('should prioritize environments over envs', () => {
+      const options = new EnvOptionsContainer({
+        envs: {
+          development: 'develop',
+        },
+        environments: {
+          development: 'in-development',
+        },
+      });
+
+      expect(options.environments.development).to.be.equal('in-development');
     });
   });
 
   describe('Environments', () => {
     it('should allow overriding the predefined environments', () => {
-      const test = 'TEST';
+      const test = 'TESTable';
       const production = 'Prod';
-      const development = 'DevelopMent';
+      const development = 'Develop';
       const staging = 'Staging';
 
       const opts = new EnvOptionsContainer({
-        envs: {
+        environments: {
           production,
           development,
           staging,
@@ -75,28 +127,47 @@ describe('EnvOptionsContainer', () => {
       });
 
       const {
-        envs,
+        environments,
         doNotWarnIn: [prod],
       } = opts;
 
-      expect(envs.development).to.equal(development.toLowerCase());
-      expect(envs.production).to.equal(production.toLowerCase());
-      expect(envs.staging).to.equal(staging.toLowerCase());
-      expect(envs.test).to.equal(test.toLowerCase());
+      expect(environments.development).to.equal(development.toLowerCase());
+      expect(environments.production).to.equal(production.toLowerCase());
+      expect(environments.staging).to.equal(staging.toLowerCase());
+      expect(environments.test).to.equal(test.toLowerCase());
 
-      expect(prod).to.equal(envs.production);
+      expect(prod).to.equal(environments.production);
+    });
+
+    it('should allow overriding of the default environment with defined environments', () => {
+      const test = 'TESTable';
+      const production = 'Prod';
+      const development = 'Develop';
+      const staging = 'Staging';
+
+      const options = new EnvOptionsContainer({
+        defaultEnv: Environment.Production,
+        environments: {
+          production,
+          development,
+          staging,
+          test,
+        },
+      });
+
+      expect(options.defaultEnv).to.equal('prod');
     });
 
     it('should allow creating new environments', () => {
-      const { envs } = new EnvOptionsContainer({
-        envs: {
+      const { environments } = new EnvOptionsContainer({
+        environments: {
           alternate: 'alternative',
           wat: 'wat',
         },
       });
 
-      expect(envs.alternate).to.equal('alternative');
-      expect(envs.wat).to.equal('wat');
+      expect(environments.alternate).to.equal('alternative');
+      expect(environments.wat).to.equal('wat');
     });
   });
 });

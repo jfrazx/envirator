@@ -42,8 +42,9 @@ import * as winston from 'winston';
 const envOpts: EnvInitOptions = {
   warnOnly: true,
   logger: winston,
-  keyToJsProp: true,
+  camelcase: true,
   noDefaultEnv: true,
+  defaultEnv: 'production',
   productionDefaults: true,
   doNotWarnIn: ['production'],
   nodeEnv: 'NODE_ENVIRONMENT',
@@ -52,30 +53,32 @@ const envOpts: EnvInitOptions = {
 const env = new Envirator(envOpts);
 ```
 
-You may override the default environment strings on initialization:
+You may override the default environment strings on initialization or provide custom environments:
 
 ```typescript
 const env = new Env({
-  envs: {
+  environments: {
     test: 'testing',
     staging: 'staged',
     production: 'prod',
     development: 'develop',
+    custom: 'custom_env',
   },
 });
 ```
 
-Be aware that values will be lowercased.
+Be aware that values will be lower-cased.
 
 ### Initialization Options
 
 - `nodeEnv: string` :: Change where to locate the Node environment. Default is `NODE_ENV`
 - `logger: EnvLogger` :: Prints warning and error messages to the terminal. Default is `console` object.
-- `envs: Environments` :: An object that allows overriding of `production`, `development`, `test` and `staging` strings
+- `environments: Environments` :: An object that allows overriding of `production`, `development`, `test` and `staging` strings
+- `defaultEnv: string` :: Designate the default environment. This should be a key from the `environments` option. Default is `development`
 - `noDefaultEnv: boolean` :: Specify if you do not want to provide a default environment if one is not set. Default is `false`
 - `productionDefaults: boolean` :: Specifies if supplied default values should be allowed in a production environment. Default is `false`
 - `warnOnly: boolean` :: Warn of missing environment variables rather than exit. Does nothing in production environment. Default is `false`
-- `keyToJsProp: boolean` :: If true, when calling provideMany, the requested environment variable key will be transformed to camelcase. Default is `false`
+- `camelcase: boolean` :: If true, when calling provideMany, the requested environment variable key will be transformed to camelcase. Default is `false`
 - `doNotWarnIn: string[]` :: An array of Environment strings in which `warnOnly` is ignored and missing environment variables will force program exit. Default is `['production']`
 
 ### Configs
@@ -146,7 +149,7 @@ import { EnvManyOptions } from '@status/envirator';
 const envVar: EnvManyOptions = {
   key: 'SOME_VAR',
   warnOnly: true,
-  keyToJsProp: true,
+  camelcase: true,
   defaultValue: 3400,
   defaultsFor: { ... },
   mutators: parseInt,
@@ -163,7 +166,7 @@ const { NODE_ENV, someVar, CONTENT: content } = env.provideMany([
 Additionally you may wish to change the property or the entire shape of the returned object.
 
 ```typescript
-const env = new Env({ keyToJsProp: true });
+const env = new Env({ camelcase: true });
 
 interface JwtOptions {
   secret: string;
@@ -246,6 +249,24 @@ if (env.isTest) {
 }
 ```
 
+Envirator can be extended if you want to use custom environment helpers:
+
+```typescript
+class CustomEnv extends Envirator {
+  constructor({ environments = {}, ...options }: EnvInitOptions = {}) {
+    super({
+      ...options,
+      defaultEnv: 'custom',
+      environments: { custom: 'my_custom_env', ...environments },
+    });
+  }
+
+  get isCustom() {
+    return this.currentEnv === this.opts.environments.custom;
+  }
+}
+```
+
 You can retrieve or set the current environment:
 
 ```typescript
@@ -265,7 +286,7 @@ Perhaps in your local development environment you don't have a database user/pas
 ```typescript
 import { Env } from '@status/envirator';
 
-const env = new Env({ keyToJsProp: true });
+const env = new Env({ camelcase: true });
 
 const { dbUser, dbPassword } = env.provideMany([
   { key: 'DB_USER', warnOnly: true },
@@ -280,7 +301,7 @@ A warning is issued to the console rather than immediately exiting, unless the e
 Or setting a pool size
 
 ```typescript
-const MONGO_POOL = env.provide<number>('MONGO_POOL', {
+const mongoPool = env.provide<number>('MONGO_POOL', {
   defaultValue: 15,
   mutators: parseInt,
   productionDefaults: true,
@@ -310,7 +331,7 @@ Modify the built-in environments and disallow warnings.
 
 ```typescript
 const env = new Envirator({
-  envs: {
+  environments: {
     production: 'prod',
     development: 'develop',
   },

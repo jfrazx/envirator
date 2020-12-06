@@ -1,9 +1,11 @@
 import { Env, Envirator, EnvManyResult, EnvManyOptions } from '../src';
-import * as winston from 'winston';
+import * as winstonOriginal from 'winston';
 import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { join } from 'path';
 import chalk from 'chalk';
+
+const winston = { ...winstonOriginal };
 
 describe('Envirator', () => {
   let originalEnv: any;
@@ -113,6 +115,25 @@ describe('Envirator', () => {
 
       env.currentEnv = 'test';
       expect(env.currentEnv).to.equal('test');
+    });
+
+    it('should override the default env and provide as the current environment', () => {
+      const env = new Envirator({
+        defaultEnv: 'production',
+      });
+
+      expect(env.currentEnv).to.equal('production');
+    });
+
+    it('should override the default env with a defined env and provide as the current environment', () => {
+      const env = new Envirator({
+        defaultEnv: 'something',
+        envs: {
+          something: 'things',
+        },
+      });
+
+      expect(env.currentEnv).to.equal('things');
     });
   });
 

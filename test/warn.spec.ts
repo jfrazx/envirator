@@ -7,8 +7,15 @@ import pino from 'pino';
 const logger = pino();
 
 describe('DoNotWarn', () => {
+  let originalEnv: any;
+
+  before(() => {
+    originalEnv = { ...process.env };
+  });
+
   afterEach(() => {
     sinon.restore();
+    process.env = { ...originalEnv };
   });
 
   beforeEach(() => {
