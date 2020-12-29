@@ -103,13 +103,15 @@ export class Envirator {
       defaultsFor = {},
       logger = this.options.logger,
       warnOnly = this.options.warnOnly,
+      allowEmptyString = this.options.allowEmptyString,
       productionDefaults = this.options.productionDefaults,
     }: EnvOptions = {}
   ): T {
     const value = this.retrieveEnvironmentVariable(
       key,
-      defaultValue ?? defaultsFor[this.currentEnv],
-      productionDefaults
+      defaultsFor[this.currentEnv] ?? defaultValue,
+      productionDefaults,
+      allowEmptyString
     );
 
     this.exitOrWarn(key, value, warnOnly, logger);
@@ -263,19 +265,26 @@ export class Envirator {
   private retrieveEnvironmentVariable(
     key: string,
     defaultValue: any,
-    provideDefaults: boolean
+    provideDefaults: boolean,
+    allowEmptyString: boolean
   ): string | undefined {
-    const value = process.env[key];
+    const value = this.accessEnvironmentVariable(key, allowEmptyString);
 
-    return !isUndefined(value) ||
-      this.shouldNotProvideProductionDefaults(provideDefaults)
+    return !isUndefined(value) || this.shouldNotProvideDefaults(provideDefaults)
       ? value
       : defaultValue;
   }
 
-  private shouldNotProvideProductionDefaults(
-    provideDefaults: boolean
-  ): boolean {
+  private accessEnvironmentVariable(
+    key: string,
+    allowEmptyString: boolean
+  ): any {
+    const value = process.env[key];
+
+    return !allowEmptyString && value?.trim().length === 0 ? void 0 : value;
+  }
+
+  private shouldNotProvideDefaults(provideDefaults: boolean): boolean {
     return !provideDefaults && this.isProduction;
   }
 }

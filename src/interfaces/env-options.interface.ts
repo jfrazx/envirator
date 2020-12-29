@@ -5,7 +5,7 @@ export interface EnvMutator<T = any, R = any> {
   (value: T): R;
 }
 
-interface EnvStartOptions {
+interface EnvSharedOptions {
   /**
    * @description Prints warning and error messages to the terminal
    * @default console
@@ -23,9 +23,15 @@ interface EnvStartOptions {
    * @default false
    */
   productionDefaults?: boolean;
+
+  /**
+   * @description Set if empty string is an acceptable environment variable value
+   * @default true
+   */
+  allowEmptyString?: boolean;
 }
 
-export interface EnvOptions extends EnvStartOptions {
+export interface EnvOptions extends EnvSharedOptions {
   /**
    * @description A default value to provide for missing environment variables
    */
@@ -69,7 +75,7 @@ export interface EnvConfigOptions {
   nodeEnv?: string;
 }
 
-export interface EnvInitOptions extends EnvStartOptions, EnvConfigOptions {
+export interface EnvInitOptions extends EnvSharedOptions, EnvConfigOptions {
   /**
    * @deprecated Use environments
    */

@@ -9,12 +9,15 @@ const defaultEnvs: Required<Environments> = {
   test: Environment.Test,
 };
 
+type DeprecatedOptions = 'envs' | 'keyToJsProp';
+
 interface WorkingOptions
-  extends Required<Omit<EnvInitOptions, 'envs' | 'keyToJsProp'>> {}
+  extends Required<Omit<EnvInitOptions, DeprecatedOptions>> {}
 
 export class EnvOptionsContainer implements WorkingOptions {
   readonly environments!: Required<Environments>;
   readonly productionDefaults: boolean;
+  readonly allowEmptyString: boolean;
   readonly doNotWarnIn: string[];
   readonly noDefaultEnv: boolean;
   readonly defaultEnv: string;
@@ -26,6 +29,7 @@ export class EnvOptionsContainer implements WorkingOptions {
   constructor({
     productionDefaults = false,
     nodeEnv = Default.NodeEnv,
+    allowEmptyString = true,
     noDefaultEnv = false,
     environments = {},
     logger = console,
@@ -41,6 +45,7 @@ export class EnvOptionsContainer implements WorkingOptions {
     this.warnOnly = warnOnly;
     this.camelcase = camelcase ?? keyToJsProp ?? false;
     this.noDefaultEnv = noDefaultEnv;
+    this.allowEmptyString = allowEmptyString;
     this.productionDefaults = productionDefaults;
     this.environments = Object.entries({
       ...defaultEnvs,

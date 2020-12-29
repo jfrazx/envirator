@@ -44,6 +44,7 @@ const envOpts: EnvInitOptions = {
   logger: winston,
   camelcase: true,
   noDefaultEnv: true,
+  allowEmptyString: false,
   defaultEnv: 'production',
   productionDefaults: true,
   doNotWarnIn: ['production'],
@@ -76,6 +77,7 @@ Be aware that values will be lower-cased.
 - `environments: Environments` :: An object that allows overriding of `production`, `development`, `test` and `staging` strings
 - `defaultEnv: string` :: Designate the default environment. This should be a key from the `environments` option. Default is `development`
 - `noDefaultEnv: boolean` :: Specify if you do not want to provide a default environment if one is not set. Default is `false`
+- `allowEmptyString: boolean` :: Specify if an empty string is an acceptable environment variable value. Default is `true`
 - `productionDefaults: boolean` :: Specifies if supplied default values should be allowed in a production environment. Default is `false`
 - `warnOnly: boolean` :: Warn of missing environment variables rather than exit. Does nothing in production environment. Default is `false`
 - `camelcase: boolean` :: If true, when calling provideMany, the requested environment variable key will be transformed to camelcase. Default is `false`
@@ -116,14 +118,15 @@ const envOpts: EnvOptions = {
   logger: winston,
   defaultValue: 4800,
   mutators: parseInt,
+  allowEmptyString: false,
   productionDefaults: true,
 };
 
 const port = env.provide<number>('PORT', envOpts);
 ```
 
-In addition to the three options previously discussed (warnOnly, logger, productionDefaults), you may provide a default value for use in the event an environment variable does not exist.  
-A single function or an array of functions may be passed to modify the extracted value.
+In addition to options previously discussed (warnOnly, logger, productionDefaults, allowEmptyString), you may provide a default value for use in the event an environment variable does not exist.  
+A single function or an array of functions may be passed to modify the extracted value (`mutators`).
 
 You may have different default values based on the current environment. Overridden environments may be used.
 
@@ -136,6 +139,20 @@ const envOpts: EnvOptions = {
   },
   warnOnly: true,
   productionDefaults: false,
+};
+```
+
+Providing a default with environment based defaults will utilize the more specific environment, if preset.
+
+```typescript
+const envOpts: EnvOptions = {
+  defaultValue: 1234,
+  defaultsFor: {
+    testable: 7623,
+    staging: 9999,
+    dev: 6543,
+  },
+  warnOnly: true,
 };
 ```
 
@@ -262,7 +279,7 @@ class CustomEnv extends Envirator {
   }
 
   get isCustom() {
-    return this.currentEnv === this.opts.environments.custom;
+    return this.currentEnv === this.options.environments.custom;
   }
 }
 ```

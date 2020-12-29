@@ -15,6 +15,7 @@ describe('EnvOptionsContainer', () => {
       expect(options.nodeEnv).to.equal('NODE_ENV');
       expect(options.noDefaultEnv).to.be.false;
       expect(options.camelcase).to.be.false;
+      expect(options.allowEmptyString).to.be.true;
       expect(options.defaultEnv).to.equal('development');
       expect(environments).to.be.an('object');
       expect(Object.keys(environments)).to.have.lengthOf(4);
@@ -32,6 +33,7 @@ describe('EnvOptionsContainer', () => {
     it('should allow defaults to be overridden', () => {
       const options = new EnvOptionsContainer({
         productionDefaults: true,
+        allowEmptyString: false,
         warnOnly: true,
         logger: {
           warn: console.log,
@@ -53,6 +55,7 @@ describe('EnvOptionsContainer', () => {
       expect(options.productionDefaults).to.be.true;
       expect(options.warnOnly).to.be.true;
       expect(options.logger).to.not.equal(console);
+      expect(options.allowEmptyString).to.be.false;
       expect(options.nodeEnv).to.equal('NODE_ENVIRONMENT');
       expect(options.defaultEnv).to.equal('');
       expect(options.noDefaultEnv).to.be.true;
