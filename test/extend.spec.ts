@@ -6,6 +6,7 @@ class CustomEnv extends Envirator {
     super({
       ...options,
       defaultEnv: 'custom',
+      // @ts-ignore
       environments: { custom: 'my_custom_env', ...environments },
     });
   }

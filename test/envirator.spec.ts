@@ -105,6 +105,140 @@ describe('Envirator', () => {
       sinon.assert.calledWith(process.exit as any, 1);
     });
 
+    it('should exit when allowEmptyString is set to false during initialization', () => {
+      const env = new Envirator({
+        allowEmptyString: false,
+        logger: winston,
+      });
+
+      env.setEnv('EMPTY', '');
+
+      const empty = env.provide('EMPTY');
+
+      expect(empty).to.be.undefined;
+
+      sinon.assert.called(winston.error as any);
+      sinon.assert.calledWith(
+        winston.error as any,
+        chalk.red(`[ENV ERROR]: Missing environment variable 'EMPTY'`)
+      );
+      sinon.assert.called(process.exit as any);
+      sinon.assert.calledWith(process.exit as any, 1);
+    });
+
+    it('should warn when allowEmptyString is set to false during initialization', () => {
+      const env = new Envirator({
+        allowEmptyString: false,
+        warnOnly: true,
+        logger: winston,
+      });
+
+      env.setEnv('EMPTY', '');
+
+      const empty = env.provide('EMPTY');
+
+      expect(empty).to.be.undefined;
+
+      sinon.assert.called(winston.warn as any);
+      sinon.assert.calledWith(
+        winston.warn as any,
+        chalk.yellow(`[ENV WARN]: Missing environment variable 'EMPTY'`)
+      );
+      sinon.assert.notCalled(process.exit as any);
+    });
+
+    it('should exit when allowEmptyString is set to false during provide', () => {
+      const env = new Envirator({
+        logger: winston,
+      });
+
+      env.setEnv('EMPTY', '     ');
+
+      const empty = env.provide('EMPTY', { allowEmptyString: false });
+
+      expect(empty).to.be.undefined;
+
+      sinon.assert.called(winston.error as any);
+      sinon.assert.calledWith(
+        winston.error as any,
+        chalk.red(`[ENV ERROR]: Missing environment variable 'EMPTY'`)
+      );
+      sinon.assert.called(process.exit as any);
+      sinon.assert.calledWith(process.exit as any, 1);
+    });
+
+    it('should warn when allowEmptyString is set to false during provide', () => {
+      const env = new Envirator({
+        warnOnly: true,
+        logger: winston,
+      });
+
+      env.setEnv('EMPTY', '');
+
+      const empty = env.provide('EMPTY', { allowEmptyString: false });
+
+      expect(empty).to.be.undefined;
+
+      sinon.assert.called(winston.warn as any);
+      sinon.assert.calledWith(
+        winston.warn as any,
+        chalk.yellow(`[ENV WARN]: Missing environment variable 'EMPTY'`)
+      );
+      sinon.assert.notCalled(process.exit as any);
+    });
+
+    it('should NOT exit when allowEmptyString is set to false during initialization, but true with provide', () => {
+      const env = new Envirator({
+        allowEmptyString: false,
+        logger: winston,
+      });
+
+      env.setEnv('EMPTY', '');
+
+      const empty = env.provide('EMPTY', { allowEmptyString: true });
+
+      expect(empty).to.be.equal('');
+
+      sinon.assert.notCalled(winston.error as any);
+      sinon.assert.notCalled(process.exit as any);
+    });
+
+    it('should NOT warn when allowEmptyString is set to false during initialization, but true with provide', () => {
+      const env = new Envirator({
+        allowEmptyString: false,
+        warnOnly: true,
+        logger: winston,
+      });
+
+      env.setEnv('EMPTY', '');
+
+      const empty = env.provide('EMPTY', { allowEmptyString: true });
+
+      expect(empty).to.be.equal('');
+
+      sinon.assert.notCalled(winston.warn as any);
+      sinon.assert.notCalled(process.exit as any);
+    });
+
+    it('should exit when allowEmptyString is set to false during provide with no envVar', () => {
+      const env = new Envirator({
+        allowEmptyString: false,
+        logger: winston,
+      });
+
+      const empty = env.provide('EMPTY', { allowEmptyString: false });
+
+      expect(empty).to.be.undefined;
+
+      sinon.assert.called(winston.error as any);
+      sinon.assert.calledWith(
+        winston.error as any,
+        chalk.red(`[ENV ERROR]: Missing environment variable 'EMPTY'`)
+      );
+      sinon.assert.called(process.exit as any);
+      sinon.assert.calledWith(process.exit as any, 1);
+    });
+
     it('should supply the current environment', () => {
       const env = new Envirator();
 
@@ -262,104 +396,6 @@ describe('Envirator', () => {
     });
   });
 
-  describe('LoadConfig', () => {
-    it('should load a config based on the environment', () => {
-      const env = new Envirator({
-        warnOnly: true,
-      });
-
-      env.load();
-
-      expect(env.provide('PORTAL')).to.equal('5200');
-      expect(env.provide('SESSIONAL')).to.equal('thisissession');
-    });
-
-    it('should load a config when passing an object', () => {
-      const env = new Envirator({
-        warnOnly: true,
-      });
-
-      env.load({
-        logger: console,
-        nodeEnv: 'development',
-        config: {
-          path: '.env.development',
-        },
-      });
-
-      expect(env.provide('PORTAL')).to.equal('5200');
-      expect(env.provide('SESSIONAL')).to.equal('thisissession');
-    });
-
-    it('should load a config from a path', () => {
-      const envirator = new Envirator({
-        warnOnly: true,
-        logger: {
-          warn: () => {},
-          error: console.error,
-        },
-      });
-
-      const value = envirator.provide('PORTZ');
-      const sess = envirator.provide('SESSIONZ');
-
-      expect(value).to.be.undefined;
-      expect(sess).to.be.undefined;
-
-      envirator.load(join(__dirname, '.env.development'));
-
-      const port = envirator.provide('PORTZ', { logger: winston });
-      const session = envirator.provide('SESSIONZ');
-
-      expect(port).to.not.be.undefined;
-      expect(port).to.equal('5200');
-
-      expect(session).to.not.be.undefined;
-      expect(session).to.equal('thisissession');
-    });
-
-    it('should exit if config loading fails', () => {
-      const error = sinon.stub(console, 'error');
-
-      const envirator = new Envirator();
-
-      envirator.load('config.fail', {
-        logger: console,
-      });
-
-      sinon.assert.called(error);
-      sinon.assert.calledWith(
-        error,
-        chalk.red(
-          `[ENV ERROR] failed to load 'config.fail': Error: ENOENT: no such file or directory, open 'config.fail'`
-        )
-      );
-      sinon.assert.called(process.exit as any);
-      sinon.assert.calledWith(process.exit as any, 1);
-    });
-
-    it('should exit when loading and noDefaultEnv is set', () => {
-      const error = sinon.stub(console, 'error');
-      const env = new Envirator({
-        noDefaultEnv: true,
-        logger: {
-          warn: () => {},
-          error,
-        },
-      });
-
-      env.load();
-
-      sinon.assert.called(error);
-      sinon.assert.calledWith(
-        error,
-        chalk.red(
-          `[ENV ERROR] failed to load '.env': Error: ENOENT: no such file or directory, open '.env'`
-        )
-      );
-    });
-  });
-
   describe('Provide', () => {
     it('should provide a default value', () => {
       const envirator = new Envirator({
@@ -433,6 +469,48 @@ describe('Envirator', () => {
       expect(noneVar).to.be.undefined;
 
       sinon.assert.called(winston.error as any);
+    });
+
+    it('should provide environment based defaults and a default value when environment does not exist', () => {
+      const env = new Envirator({
+        envs: { staging: 'staged', customEnv: 'custom' },
+        logger: winston,
+      });
+
+      const options = {
+        defaultValue: 3456,
+        defaultsFor: {
+          staged: 3444,
+          custom: 9999,
+        },
+      };
+
+      env.currentEnv = 'test';
+
+      const testVar = env.provide('FORT', options);
+      expect(testVar).to.equal(3456);
+
+      env.currentEnv = 'staged';
+
+      const stagedVar = env.provide('FORT', options);
+      expect(stagedVar).to.equal(3444);
+
+      env.currentEnv = 'development';
+
+      const devVar = env.provide('FORT', options);
+      expect(devVar).to.equal(3456);
+
+      env.currentEnv = 'custom';
+
+      const customVar = env.provide('FORT', options);
+      expect(customVar).to.equal(9999);
+
+      env.currentEnv = 'none';
+
+      const noneVar = env.provide('FORT', options);
+      expect(noneVar).to.be.equal(3456);
+
+      sinon.assert.notCalled(winston.error as any);
     });
   });
 
