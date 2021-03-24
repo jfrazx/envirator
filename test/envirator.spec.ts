@@ -35,18 +35,198 @@ describe('Envirator', () => {
   });
 
   describe('Behavior', () => {
-    it('should warn when an env var does not exist', () => {
-      const envirator = new Envirator({ warnOnly: true });
+    describe('Exit', () => {
+      it('should exit when noDefaultEnv is set to true', () => {
+        const env = new Envirator({
+          noDefaultEnv: true,
+          warnOnly: true,
+          logger: winston,
+        });
 
-      const warn = sinon.stub(console, 'warn');
+        const currentEnv = env.currentEnv;
 
-      expect(envirator.provide('SOME_ENV_VAR')).to.be.undefined;
+        expect(currentEnv).to.be.undefined;
+        sinon.assert.called(winston.error as any);
+        sinon.assert.calledWith(
+          winston.error as any,
+          chalk.red(`[ENV ERROR]: Missing environment variable 'NODE_ENV'`)
+        );
+        sinon.assert.called(process.exit as any);
+        sinon.assert.calledWith(process.exit as any, 1);
+      });
 
-      sinon.assert.called(warn);
-      sinon.assert.calledWith(
-        warn,
-        chalk.yellow(`[ENV WARN]: Missing environment variable 'SOME_ENV_VAR'`)
-      );
+      it('should exit when noDefaultEnv is set to true and nodeEnv is empty string', () => {
+        const env = new Envirator({
+          noDefaultEnv: true,
+          warnOnly: true,
+          logger: winston,
+        });
+
+        env.setEnv('NODE_ENV', '');
+
+        const currentEnv = env.currentEnv;
+
+        expect(currentEnv).to.be.undefined;
+        sinon.assert.called(winston.error as any);
+        sinon.assert.calledWith(
+          winston.error as any,
+          chalk.red(`[ENV ERROR]: Missing environment variable 'NODE_ENV'`)
+        );
+        sinon.assert.called(process.exit as any);
+        sinon.assert.calledWith(process.exit as any, 1);
+      });
+
+      it('should exit when allowEmptyString is set to false during initialization', () => {
+        const env = new Envirator({
+          allowEmptyString: false,
+          logger: winston,
+        });
+
+        env.setEnv('EMPTY', '');
+
+        const empty = env.provide('EMPTY');
+
+        expect(empty).to.be.undefined;
+
+        sinon.assert.called(winston.error as any);
+        sinon.assert.calledWith(
+          winston.error as any,
+          chalk.red(`[ENV ERROR]: Missing environment variable 'EMPTY'`)
+        );
+        sinon.assert.called(process.exit as any);
+        sinon.assert.calledWith(process.exit as any, 1);
+      });
+
+      it('should exit when allowEmptyString is set to false during provide', () => {
+        const env = new Envirator({
+          logger: winston,
+        });
+
+        env.setEnv('EMPTY', '     ');
+
+        const empty = env.provide('EMPTY', { allowEmptyString: false });
+
+        expect(empty).to.be.undefined;
+
+        sinon.assert.called(winston.error as any);
+        sinon.assert.calledWith(
+          winston.error as any,
+          chalk.red(`[ENV ERROR]: Missing environment variable 'EMPTY'`)
+        );
+        sinon.assert.called(process.exit as any);
+        sinon.assert.calledWith(process.exit as any, 1);
+      });
+
+      it('should exit when allowEmptyString is set to false during provide with no envVar', () => {
+        const env = new Envirator({
+          allowEmptyString: false,
+          logger: winston,
+        });
+
+        const empty = env.provide('EMPTY', { allowEmptyString: false });
+
+        expect(empty).to.be.undefined;
+
+        sinon.assert.called(winston.error as any);
+        sinon.assert.calledWith(
+          winston.error as any,
+          chalk.red(`[ENV ERROR]: Missing environment variable 'EMPTY'`)
+        );
+        sinon.assert.called(process.exit as any);
+        sinon.assert.calledWith(process.exit as any, 1);
+      });
+
+      it('should NOT exit when allowEmptyString is set to false during initialization, but true with provide', () => {
+        const env = new Envirator({
+          allowEmptyString: false,
+          logger: winston,
+        });
+
+        env.setEnv('EMPTY', '');
+
+        const empty = env.provide('EMPTY', { allowEmptyString: true });
+
+        expect(empty).to.be.equal('');
+
+        sinon.assert.notCalled(winston.error as any);
+        sinon.assert.notCalled(process.exit as any);
+      });
+    });
+
+    describe('Warn', () => {
+      it('should warn when an env var does not exist', () => {
+        const envirator = new Envirator({ warnOnly: true });
+
+        const warn = sinon.stub(console, 'warn');
+
+        expect(envirator.provide('SOME_ENV_VAR')).to.be.undefined;
+
+        sinon.assert.called(warn);
+        sinon.assert.calledWith(
+          warn,
+          chalk.yellow(
+            `[ENV WARN]: Missing environment variable 'SOME_ENV_VAR'`
+          )
+        );
+      });
+
+      it('should warn when allowEmptyString is set to false during initialization', () => {
+        const env = new Envirator({
+          allowEmptyString: false,
+          warnOnly: true,
+          logger: winston,
+        });
+
+        env.setEnv('EMPTY', '');
+
+        const empty = env.provide('EMPTY');
+
+        expect(empty).to.be.undefined;
+
+        sinon.assert.called(winston.warn as any);
+        sinon.assert.calledWith(
+          winston.warn as any,
+          chalk.yellow(`[ENV WARN]: Missing environment variable 'EMPTY'`)
+        );
+        sinon.assert.notCalled(process.exit as any);
+      });
+
+      it('should warn when allowEmptyString is set to false during provide', () => {
+        const env = new Envirator({
+          warnOnly: true,
+          logger: winston,
+        });
+
+        env.setEnv('EMPTY', '');
+
+        const empty = env.provide('EMPTY', { allowEmptyString: false });
+
+        expect(empty).to.be.undefined;
+
+        sinon.assert.called(winston.warn as any);
+        sinon.assert.calledWith(
+          winston.warn as any,
+          chalk.yellow(`[ENV WARN]: Missing environment variable 'EMPTY'`)
+        );
+        sinon.assert.notCalled(process.exit as any);
+      });
+
+      it('should NOT warn when allowEmptyString is set to false during initialization, but true with provide', () => {
+        const env = new Envirator({
+          allowEmptyString: false,
+          warnOnly: true,
+          logger: winston,
+        });
+
+        env.setEnv('EMPTY', '');
+
+        const empty = env.provide('EMPTY', { allowEmptyString: true });
+
+        expect(empty).to.be.equal('');
+
+        sinon.assert.notCalled(winston.warn as any);
+        sinon.assert.notCalled(process.exit as any);
+      });
     });
 
     it('should accept an alternate logger when instantiating', () => {
@@ -82,159 +262,6 @@ describe('Envirator', () => {
         chalk.red(`[ENV ERROR]: Missing environment variable 'WAT'`)
       );
 
-      sinon.assert.called(process.exit as any);
-      sinon.assert.calledWith(process.exit as any, 1);
-    });
-
-    it('should exit when noDefaultEnv is set to true', () => {
-      const env = new Envirator({
-        noDefaultEnv: true,
-        warnOnly: true,
-        logger: winston,
-      });
-
-      const currentEnv = env.currentEnv;
-
-      expect(currentEnv).to.be.undefined;
-      sinon.assert.called(winston.error as any);
-      sinon.assert.calledWith(
-        winston.error as any,
-        chalk.red(`[ENV ERROR]: Missing environment variable 'NODE_ENV'`)
-      );
-      sinon.assert.called(process.exit as any);
-      sinon.assert.calledWith(process.exit as any, 1);
-    });
-
-    it('should exit when allowEmptyString is set to false during initialization', () => {
-      const env = new Envirator({
-        allowEmptyString: false,
-        logger: winston,
-      });
-
-      env.setEnv('EMPTY', '');
-
-      const empty = env.provide('EMPTY');
-
-      expect(empty).to.be.undefined;
-
-      sinon.assert.called(winston.error as any);
-      sinon.assert.calledWith(
-        winston.error as any,
-        chalk.red(`[ENV ERROR]: Missing environment variable 'EMPTY'`)
-      );
-      sinon.assert.called(process.exit as any);
-      sinon.assert.calledWith(process.exit as any, 1);
-    });
-
-    it('should warn when allowEmptyString is set to false during initialization', () => {
-      const env = new Envirator({
-        allowEmptyString: false,
-        warnOnly: true,
-        logger: winston,
-      });
-
-      env.setEnv('EMPTY', '');
-
-      const empty = env.provide('EMPTY');
-
-      expect(empty).to.be.undefined;
-
-      sinon.assert.called(winston.warn as any);
-      sinon.assert.calledWith(
-        winston.warn as any,
-        chalk.yellow(`[ENV WARN]: Missing environment variable 'EMPTY'`)
-      );
-      sinon.assert.notCalled(process.exit as any);
-    });
-
-    it('should exit when allowEmptyString is set to false during provide', () => {
-      const env = new Envirator({
-        logger: winston,
-      });
-
-      env.setEnv('EMPTY', '     ');
-
-      const empty = env.provide('EMPTY', { allowEmptyString: false });
-
-      expect(empty).to.be.undefined;
-
-      sinon.assert.called(winston.error as any);
-      sinon.assert.calledWith(
-        winston.error as any,
-        chalk.red(`[ENV ERROR]: Missing environment variable 'EMPTY'`)
-      );
-      sinon.assert.called(process.exit as any);
-      sinon.assert.calledWith(process.exit as any, 1);
-    });
-
-    it('should warn when allowEmptyString is set to false during provide', () => {
-      const env = new Envirator({
-        warnOnly: true,
-        logger: winston,
-      });
-
-      env.setEnv('EMPTY', '');
-
-      const empty = env.provide('EMPTY', { allowEmptyString: false });
-
-      expect(empty).to.be.undefined;
-
-      sinon.assert.called(winston.warn as any);
-      sinon.assert.calledWith(
-        winston.warn as any,
-        chalk.yellow(`[ENV WARN]: Missing environment variable 'EMPTY'`)
-      );
-      sinon.assert.notCalled(process.exit as any);
-    });
-
-    it('should NOT exit when allowEmptyString is set to false during initialization, but true with provide', () => {
-      const env = new Envirator({
-        allowEmptyString: false,
-        logger: winston,
-      });
-
-      env.setEnv('EMPTY', '');
-
-      const empty = env.provide('EMPTY', { allowEmptyString: true });
-
-      expect(empty).to.be.equal('');
-
-      sinon.assert.notCalled(winston.error as any);
-      sinon.assert.notCalled(process.exit as any);
-    });
-
-    it('should NOT warn when allowEmptyString is set to false during initialization, but true with provide', () => {
-      const env = new Envirator({
-        allowEmptyString: false,
-        warnOnly: true,
-        logger: winston,
-      });
-
-      env.setEnv('EMPTY', '');
-
-      const empty = env.provide('EMPTY', { allowEmptyString: true });
-
-      expect(empty).to.be.equal('');
-
-      sinon.assert.notCalled(winston.warn as any);
-      sinon.assert.notCalled(process.exit as any);
-    });
-
-    it('should exit when allowEmptyString is set to false during provide with no envVar', () => {
-      const env = new Envirator({
-        allowEmptyString: false,
-        logger: winston,
-      });
-
-      const empty = env.provide('EMPTY', { allowEmptyString: false });
-
-      expect(empty).to.be.undefined;
-
-      sinon.assert.called(winston.error as any);
-      sinon.assert.calledWith(
-        winston.error as any,
-        chalk.red(`[ENV ERROR]: Missing environment variable 'EMPTY'`)
-      );
       sinon.assert.called(process.exit as any);
       sinon.assert.calledWith(process.exit as any, 1);
     });

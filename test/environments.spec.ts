@@ -84,7 +84,7 @@ describe('Environments', () => {
     const development = 'DevelopMents';
 
     const env = new Envirator({
-      envs: {
+      environments: {
         test,
         staging,
         production,

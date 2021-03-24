@@ -17,6 +17,7 @@ mocha.opts
 .env.*
 
 .nyc_output/
+.github/
 
 !*.d.ts
 

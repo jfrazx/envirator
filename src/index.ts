@@ -1,18 +1,16 @@
+import { EnvOptionsContainer } from './options';
+import { Determinative } from './determinative';
 import { asArray } from '@jfrazx/asarray';
 import * as dotenv from 'dotenv';
-import chalk from 'chalk';
-
-import { EnvOptionsContainer } from './options';
 import { Level } from './enums';
-
+import chalk from 'chalk';
 import {
   isObject,
   isString,
   toLowerCase,
   isUndefined,
-  determineKey,
+  isEmptyString,
 } from './helpers';
-
 import {
   EnvMany,
   ResultTo,
@@ -28,13 +26,11 @@ const defaultMutator = <T = string>(value: T) => value;
 
 export class Envirator {
   protected readonly options: EnvOptionsContainer;
+  protected readonly determine: Determinative;
 
   constructor(options: EnvInitOptions = {}) {
     this.options = new EnvOptionsContainer(options);
-  }
-
-  private genFilePath(env: string, path: string | undefined): string {
-    return isUndefined(path) ? `.env${env ? '.' : env}${env}` : path;
+    this.determine = new Determinative(this, this.options);
   }
 
   protected exit(message: string, logger: EnvLogger): never {
@@ -65,7 +61,7 @@ export class Envirator {
 
     const env = (process.env[nodeEnv] || this.options.defaultEnv).toLowerCase();
 
-    const usePath = this.genFilePath(env, path || config.path);
+    const usePath = this.determine.configFilePath(env, path || config.path);
     const envResult = dotenv.config({ ...config, path: usePath });
 
     if (envResult.error) {
@@ -99,27 +95,21 @@ export class Envirator {
     key: string,
     {
       mutators,
-      defaultValue,
-      defaultsFor = {},
       logger = this.options.logger,
       warnOnly = this.options.warnOnly,
-      allowEmptyString = this.options.allowEmptyString,
-      productionDefaults = this.options.productionDefaults,
+      ...options
     }: EnvOptions = {}
   ): T {
-    const value = this.retrieveEnvironmentVariable(
-      key,
-      defaultsFor[this.currentEnv] ?? defaultValue,
-      productionDefaults,
-      allowEmptyString
-    );
+    const value = this.determine.environmentValue(key, options);
 
     this.exitOrWarn(key, value, warnOnly, logger);
 
-    return asArray(mutators!).reduce(
+    const mutatedValue = asArray(mutators!).reduce(
       (memo: any, func) => func.call(null, memo),
       value
     ) as T;
+
+    return this.determine.environmentOverride(mutatedValue, options);
   }
 
   /**
@@ -136,12 +126,17 @@ export class Envirator {
     return shape(
       envars.reduce((memo, envar) => {
         const {
+          camelcase,
           key = envar as string,
           keyTo = defaultMutator,
           keyToJsProp = this.options.camelcase,
         } = envar as EnvManyOptions;
         const opts: EnvOptions = isString(envar) ? {} : envar;
-        const useKey = determineKey(key, keyToJsProp, keyTo);
+        const useKey = this.determine.environmentKey(
+          key,
+          camelcase ?? keyToJsProp,
+          keyTo
+        );
 
         return {
           ...memo,
@@ -214,12 +209,18 @@ export class Envirator {
    * @memberof Envirator
    */
   get currentEnv(): string {
-    const { defaultEnv, nodeEnv, noDefaultEnv, logger } = this.options;
+    const { defaultEnv, nodeEnv, logger } = this.options;
     const env = process.env[nodeEnv];
 
-    return isUndefined(env) && noDefaultEnv
-      ? (this.exitOrWarn(nodeEnv, env, false, logger) as any)
+    return this.doesNotHaveNodeEnv(env)
+      ? (this.exitOrWarn(nodeEnv, undefined, false, logger) as any)
       : toLowerCase(env || defaultEnv);
+  }
+
+  private doesNotHaveNodeEnv(env: string | undefined): boolean {
+    return (
+      this.options.noDefaultEnv && (isUndefined(env) || isEmptyString(env))
+    );
   }
 
   set currentEnv(env: string) {
@@ -260,32 +261,6 @@ export class Envirator {
 
   protected shouldExit(warnOnly: boolean): boolean {
     return !warnOnly || this.options.doNotWarnIn.includes(this.currentEnv);
-  }
-
-  private retrieveEnvironmentVariable(
-    key: string,
-    defaultValue: any,
-    provideDefaults: boolean,
-    allowEmptyString: boolean
-  ): string | undefined {
-    const value = this.accessEnvironmentVariable(key, allowEmptyString);
-
-    return !isUndefined(value) || this.shouldNotProvideDefaults(provideDefaults)
-      ? value
-      : defaultValue;
-  }
-
-  private accessEnvironmentVariable(
-    key: string,
-    allowEmptyString: boolean
-  ): any {
-    const value = process.env[key];
-
-    return !allowEmptyString && value?.trim().length === 0 ? void 0 : value;
-  }
-
-  private shouldNotProvideDefaults(provideDefaults: boolean): boolean {
-    return !provideDefaults && this.isProduction;
   }
 }
 

@@ -46,7 +46,15 @@ export interface EnvOptions extends EnvSharedOptions {
    * @description A function or array of functions that will transform an environment variable
    */
   mutators?: EnvMutator | EnvMutator[];
+
+  /**
+   * @description A function or array of functions that receive the current environment variable value
+   *    and determines if the defaultValue should be used instead.
+   */
+  envOverride?: EnvOverride | EnvOverride[];
 }
+
+export type EnvOverride = (value: any, defaultValue: any) => boolean;
 
 export type DefaultsFor = {
   test?: any;
