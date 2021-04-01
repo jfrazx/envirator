@@ -1,4 +1,4 @@
-import { Envirator, Environment } from '../src';
+import { Envirator, Environment, createEnv } from '../src';
 import { expect } from 'chai';
 
 describe('Environments', () => {
@@ -13,7 +13,7 @@ describe('Environments', () => {
   });
 
   it('should provide a boolean based on if production environment', () => {
-    const env = new Envirator();
+    const env = createEnv();
 
     env.setEnv('NODE_ENV', Environment.Test);
     expect(env.isProduction).to.be.false;
@@ -83,8 +83,8 @@ describe('Environments', () => {
     const staging = 'Stagings';
     const development = 'DevelopMents';
 
-    const env = new Envirator({
-      envs: {
+    const env = createEnv({
+      environments: {
         test,
         staging,
         production,
