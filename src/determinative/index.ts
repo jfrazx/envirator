@@ -2,7 +2,7 @@ import { isUndefined, isString } from '../helpers';
 import { EnvOptions, KeyTo } from '../interfaces';
 import { EnvOptionsContainer } from '../options';
 import { asArray } from '@jfrazx/asarray';
-import { Envirator } from '../index';
+import { Envirator } from '../env';
 import camelcase from 'camelcase';
 
 export class Determinative {
