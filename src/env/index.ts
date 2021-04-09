@@ -96,12 +96,13 @@ export class Envirator {
       mutators,
       logger = this.options.logger,
       warnOnly = this.options.warnOnly,
+      suppressWarnings = this.options.suppressWarnings,
       ...options
     }: EnvOptions = {}
   ): T {
     const value = this.determine.environmentValue(key, options);
 
-    this.exitOrWarn(key, value, warnOnly, logger);
+    this.exitOrWarn(key, value, warnOnly, logger, suppressWarnings);
 
     const mutatedValue = asArray(mutators!).reduce(
       (memo: any, func) => func.call(null, memo),
@@ -241,24 +242,23 @@ export class Envirator {
     key: string,
     value: string | undefined,
     warnOnly: boolean,
-    logger: EnvLogger
+    logger: EnvLogger,
+    suppressWarnings = this.options.suppressWarnings
   ): void | never {
     if (isUndefined(value)) {
       const level = '%level%';
       const message = `[ENV ${level}]: Missing environment variable '${key}'`;
 
-      if (this.shouldExit(warnOnly)) {
+      if (this.determine.shouldExit(warnOnly)) {
         return this.exit(
           chalk.red(message.replace(level, Level.Error)),
           logger
         );
       }
 
-      logger.warn(chalk.yellow(message.replace(level, Level.Warn)));
+      if (this.determine.shouldWarn(key, suppressWarnings)) {
+        logger.warn(chalk.yellow(message.replace(level, Level.Warn)));
+      }
     }
-  }
-
-  protected shouldExit(warnOnly: boolean): boolean {
-    return !warnOnly || this.options.doNotWarnIn.includes(this.currentEnv);
   }
 }

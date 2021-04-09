@@ -1,5 +1,5 @@
-import { isUndefined, isString } from '../helpers';
-import { EnvOptions, KeyTo } from '../interfaces';
+import { isUndefined, isString, isFunction, isBoolean } from '../helpers';
+import { EnvOptions, KeyTo, WarningSuppressor } from '../interfaces';
 import { EnvOptionsContainer } from '../options';
 import { asArray } from '@jfrazx/asarray';
 import { Envirator } from '../env';
@@ -93,5 +93,36 @@ export class Determinative {
 
   configFilePath(env: string, path: string | undefined): string {
     return isUndefined(path) ? `.env${env ? '.' : env}${env}` : path;
+  }
+
+  shouldWarn(key: string, suppressWarnings: WarningSuppressor): boolean {
+    const suppression = this.determineSuppressants(suppressWarnings);
+    const suppress = suppression.some((value) =>
+      Array.isArray(value)
+        ? value.includes(this.env.currentEnv)
+        : isFunction(value)
+        ? value(key, this.env)
+        : value
+    );
+
+    return !suppress;
+  }
+
+  private determineSuppressants(warningSuppression: WarningSuppressor) {
+    const { suppressWarnings } = this.options;
+    return isBoolean(warningSuppression) ||
+      this.sameTypes(warningSuppression, suppressWarnings)
+      ? [warningSuppression]
+      : [warningSuppression, suppressWarnings];
+  }
+
+  private sameTypes(value: any, compare: any): boolean {
+    const [first, second] = [value, compare].map((v) => typeof v);
+
+    return first === second;
+  }
+
+  shouldExit(warnOnly: boolean): boolean {
+    return !warnOnly || this.options.doNotWarnIn.includes(this.env.currentEnv);
   }
 }

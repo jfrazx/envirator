@@ -1,4 +1,9 @@
-import { EnvInitOptions, EnvLogger, Environments } from '../interfaces';
+import {
+  EnvInitOptions,
+  EnvLogger,
+  Environments,
+  WarningSuppressor,
+} from '../interfaces';
 import { Default, Environment } from '../enums';
 import { toLowerCase } from '../helpers';
 
@@ -16,6 +21,7 @@ interface WorkingOptions
 
 export class EnvOptionsContainer implements WorkingOptions {
   readonly environments!: Required<Environments>;
+  readonly suppressWarnings: WarningSuppressor;
   readonly productionDefaults: boolean;
   readonly allowEmptyString: boolean;
   readonly doNotWarnIn: string[];
@@ -29,6 +35,7 @@ export class EnvOptionsContainer implements WorkingOptions {
   constructor({
     productionDefaults = false,
     nodeEnv = Default.NodeEnv,
+    suppressWarnings = false,
     allowEmptyString = true,
     noDefaultEnv = false,
     environments = {},
@@ -47,6 +54,9 @@ export class EnvOptionsContainer implements WorkingOptions {
     this.noDefaultEnv = noDefaultEnv;
     this.allowEmptyString = allowEmptyString;
     this.productionDefaults = productionDefaults;
+    this.suppressWarnings = Array.isArray(suppressWarnings)
+      ? suppressWarnings.map((e) => e.toLowerCase())
+      : suppressWarnings;
     this.environments = Object.entries({
       ...defaultEnvs,
       ...envs,

@@ -227,6 +227,123 @@ describe('Envirator', () => {
         sinon.assert.notCalled(winston.warn as any);
         sinon.assert.notCalled(process.exit as any);
       });
+
+      it('should not output warnings when suppressed with true', () => {
+        const env = new Envirator({
+          suppressWarnings: true,
+          warnOnly: true,
+          logger: winston,
+        });
+
+        const empty = env.provide('EMPTY');
+
+        expect(empty).to.be.undefined;
+        sinon.assert.notCalled(winston.warn as any);
+        sinon.assert.notCalled(process.exit as any);
+      });
+
+      it('should not output warnings when suppressed with true via options', () => {
+        const env = new Envirator({
+          warnOnly: true,
+          logger: winston,
+        });
+
+        const empty = env.provide('EMPTY', { suppressWarnings: true });
+
+        expect(empty).to.be.undefined;
+        sinon.assert.notCalled(winston.warn as any);
+        sinon.assert.notCalled(process.exit as any);
+      });
+
+      it('should not output warnings when suppressed with an array of environments', () => {
+        const env = new Envirator({
+          suppressWarnings: ['development', 'test'],
+          warnOnly: true,
+          logger: winston,
+        });
+
+        const empty = env.provide('EMPTY');
+
+        expect(empty).to.be.undefined;
+        sinon.assert.notCalled(winston.warn as any);
+        sinon.assert.notCalled(process.exit as any);
+      });
+
+      it('should not output warnings when suppressed with an array of environments via options', () => {
+        const env = new Envirator({
+          warnOnly: true,
+          logger: winston,
+        });
+
+        const empty = env.provide('EMPTY', {
+          suppressWarnings: ['development', 'test'],
+        });
+
+        expect(empty).to.be.undefined;
+        sinon.assert.notCalled(winston.warn as any);
+        sinon.assert.notCalled(process.exit as any);
+      });
+
+      it('should not output warnings when suppressed with a function', () => {
+        const env = new Envirator({
+          suppressWarnings: (_key, env) => !env.isProduction,
+          warnOnly: true,
+          logger: winston,
+        });
+
+        const empty = env.provide('EMPTY');
+
+        expect(empty).to.be.undefined;
+        sinon.assert.notCalled(winston.warn as any);
+        sinon.assert.notCalled(process.exit as any);
+      });
+
+      it('should not output warnings when suppressed with a function via options', () => {
+        const env = new Envirator({
+          warnOnly: true,
+          logger: winston,
+        });
+
+        const empty = env.provide('EMPTY', {
+          suppressWarnings: (_key, env) => !env.isProduction,
+        });
+
+        expect(empty).to.be.undefined;
+        sinon.assert.notCalled(winston.warn as any);
+        sinon.assert.notCalled(process.exit as any);
+      });
+
+      it('should not output warnings when suppressed via init and method options', () => {
+        const env = new Envirator({
+          suppressWarnings: (_key, env) => !env.isTest,
+          warnOnly: true,
+          logger: winston,
+        });
+
+        const empty = env.provide('EMPTY', {
+          suppressWarnings: ['development'],
+        });
+
+        expect(empty).to.be.undefined;
+        sinon.assert.notCalled(winston.warn as any);
+        sinon.assert.notCalled(process.exit as any);
+      });
+
+      it('should output warnings when suppressed via init and method options with same types', () => {
+        const env = new Envirator({
+          suppressWarnings: ['development'],
+          warnOnly: true,
+          logger: winston,
+        });
+
+        const empty = env.provide('EMPTY', {
+          suppressWarnings: ['test'],
+        });
+
+        expect(empty).to.be.undefined;
+        sinon.assert.calledOnce(winston.warn as any);
+        sinon.assert.notCalled(process.exit as any);
+      });
     });
 
     it('should accept an alternate logger when instantiating', () => {

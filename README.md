@@ -44,6 +44,7 @@ const envOpts: EnvInitOptions = {
   logger: winston,
   camelcase: true,
   noDefaultEnv: true,
+  suppressWarnings: true,
   allowEmptyString: false,
   defaultEnv: 'production',
   productionDefaults: true,
@@ -72,16 +73,19 @@ Be aware that values will be lower-cased.
 
 ### Initialization Options
 
-- `nodeEnv: string` :: Change where to locate the Node environment. Default is `NODE_ENV`
-- `logger: EnvLogger` :: Prints warning and error messages to the terminal. Default is `console` object.
-- `environments: Environments` :: An object that allows overriding of `production`, `development`, `test` and `staging` strings
-- `defaultEnv: string` :: Designate the default environment. This should be a key from the `environments` option. Default is `development`
-- `noDefaultEnv: boolean` :: Specify if you do not want to provide a default environment if one is not set. Default is `false`
-- `allowEmptyString: boolean` :: Specify if an empty string is an acceptable environment variable value. Default is `true`
-- `productionDefaults: boolean` :: Specifies if supplied default values should be allowed in a production environment. Default is `false`
-- `warnOnly: boolean` :: Warn of missing environment variables rather than exit. Does nothing in production environment. Default is `false`
-- `camelcase: boolean` :: If true, when calling provideMany, the requested environment variable key will be transformed to camelcase. Default is `false`
-- `doNotWarnIn: string[]` :: An array of Environment strings in which `warnOnly` is ignored and missing environment variables will force program exit. Default is `['production']`
+| Option             | Type                                                            | Default Value             | Description                                                                                                               |
+| ------------------ | --------------------------------------------------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| nodeEnv            | string                                                          | NODE_ENV                  | Change where to locate the Node environment.                                                                              |
+| logger             | EnvLogger                                                       | console                   | Prints warning and error messages to the terminal.                                                                        |
+| environments       | Environments                                                    | { [key: string]: string } | An object that allows overriding of `production`, `development`, `test` and `staging` strings                             |
+| defaultEnv         | string                                                          | development               | Designate the default environment. This should be a key from the `environments` option.                                   |
+| noDefaultEnv       | boolean                                                         | false                     | Specify if you do not want to provide a default environment if one is not set.                                            |
+| allowEmptyString   | boolean                                                         | true                      | Specify if an empty string is an acceptable environment variable value.                                                   |
+| productionDefaults | boolean                                                         | false                     | Specifies if supplied default values should be allowed in a production environment.                                       |
+| warnOnly           | boolean                                                         | false                     | Warn of missing environment variables rather than exit. Does nothing in production environment.                           |
+| suppressWarnings   | boolean \| string[] \| (key: string, env: Envirator) => boolean | false                     | Specify if warning output should be suppressed.                                                                           |
+| camelcase          | boolean                                                         | false                     | If true, when calling provideMany, the requested environment variable key will be transformed to camelcase.               |
+| doNotWarnIn        | string[]                                                        | [production]              | An array of Environment strings in which `warnOnly` is ignored and missing environment variables will force program exit. |
 
 ### Configs
 

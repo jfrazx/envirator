@@ -1,9 +1,9 @@
 import { Environments } from './env-environments.interface';
 import { EnvLogger } from './env-logger.interface';
+import { Envirator } from '../env/index';
 
-export interface EnvMutator<T = any, R = any> {
-  (value: T): R;
-}
+export type EnvMutator<T = any, R = any> = (value: T) => R;
+export type EnvWarningSuppression = (key: string, env: Envirator) => boolean;
 
 interface EnvSharedOptions {
   /**
@@ -29,6 +29,13 @@ interface EnvSharedOptions {
    * @default true
    */
   allowEmptyString?: boolean;
+
+  /**
+   * @description Suppress warning output. Acceptable values are boolean, a function that will receive the current key and envirator instance or an array of environments in which to suppress warnings
+   *
+   *  @default false
+   */
+  suppressWarnings?: WarningSuppressor;
 }
 
 export interface EnvOptions extends EnvSharedOptions {
@@ -124,3 +131,5 @@ export interface EnvInitOptions extends EnvSharedOptions, EnvConfigOptions {
    */
   environments?: Environments;
 }
+
+export type WarningSuppressor = boolean | EnvWarningSuppression | string[];
