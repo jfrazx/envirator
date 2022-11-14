@@ -42,7 +42,7 @@
   "dependencies": {
     "@jfrazx/asarray": "^1.0.1",
     "camelcase": "^6.2.0",
-    "chalk": "^4.1.0",
+    "chalk": "^4.1.2",
     "dotenv": "^8.2.0"
   },
   "devDependencies": {
