@@ -224,7 +224,7 @@ describe('DoNotWarn', () => {
     const env = new Env({
       warnOnly: true,
       logger,
-      envs: {
+      environments: {
         custom: 'custom',
       },
     });
@@ -279,7 +279,7 @@ describe('DoNotWarn', () => {
 
     const env = new Env({
       doNotWarnIn,
-      envs: {
+      environments: {
         test,
         staging,
         production,

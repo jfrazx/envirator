@@ -1,8 +1,8 @@
 import { isUndefined, isString, isFunction, isBoolean } from '../helpers';
-import { EnvOptions, KeyTo, WarningSuppressor } from '../interfaces';
-import { EnvOptionsContainer } from '../options';
+import type { EnvOptions, KeyTo, WarningSuppressor } from '../interfaces';
+import type { EnvOptionsContainer } from '../options';
 import { asArray } from '@jfrazx/asarray';
-import { Envirator } from '../env';
+import type { Envirator } from '../env';
 import camelcase from 'camelcase';
 
 export class Determinative {

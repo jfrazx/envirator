@@ -1,6 +1,6 @@
-import { Environments } from './env-environments.interface';
-import { EnvConfigOptions } from './env-options.interface';
-import { DotenvConfigOptions } from 'dotenv';
+import type { Environments } from './env-environments.interface';
+import type { EnvConfigOptions } from './env-options.interface';
+import type { DotenvConfigOptions } from 'dotenv';
 
 export interface EnvLoadOptions extends EnvConfigOptions {
   /**

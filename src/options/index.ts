@@ -1,11 +1,11 @@
-import {
-  EnvInitOptions,
-  EnvLogger,
-  Environments,
-  WarningSuppressor,
-} from '../interfaces';
 import { Default, Environment } from '../enums';
 import { toLowerCase } from '../helpers';
+import type {
+  EnvLogger,
+  Environments,
+  EnvInitOptions,
+  WarningSuppressor,
+} from '../interfaces';
 
 const defaultEnvs: Required<Environments> = {
   development: Environment.Development,
@@ -31,6 +31,7 @@ export class EnvOptionsContainer implements WorkingOptions {
   readonly logger: EnvLogger;
   readonly warnOnly: boolean;
   readonly nodeEnv: string;
+  readonly set: boolean;
 
   constructor({
     productionDefaults = false,
@@ -41,16 +42,16 @@ export class EnvOptionsContainer implements WorkingOptions {
     environments = {},
     logger = console,
     warnOnly = false,
-    keyToJsProp,
     doNotWarnIn,
+    set = false,
     defaultEnv,
     camelcase,
-    envs = {},
   }: EnvInitOptions = {}) {
+    this.set = set;
     this.logger = logger;
     this.nodeEnv = nodeEnv;
     this.warnOnly = warnOnly;
-    this.camelcase = camelcase ?? keyToJsProp ?? false;
+    this.camelcase = camelcase ?? false;
     this.noDefaultEnv = noDefaultEnv;
     this.allowEmptyString = allowEmptyString;
     this.productionDefaults = productionDefaults;
@@ -59,7 +60,6 @@ export class EnvOptionsContainer implements WorkingOptions {
       : suppressWarnings;
     this.environments = Object.entries({
       ...defaultEnvs,
-      ...envs,
       ...environments,
     }).reduce(
       (memo, [key, value]) => ({

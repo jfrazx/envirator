@@ -406,7 +406,7 @@ describe('Envirator', () => {
     it('should override the default env with a defined env and provide as the current environment', () => {
       const env = new Envirator({
         defaultEnv: 'something',
-        envs: {
+        environments: {
           something: 'things',
         },
       });
@@ -467,8 +467,8 @@ describe('Envirator', () => {
         },
       });
       const enVars = {
-        NODE_ENVS: 'production',
         PORTS: 8200,
+        NODE_ENVS: 'production',
         SESSIONS: 'session-stuff',
         SYMBLZZ: Symbol('something'),
       };
@@ -483,6 +483,46 @@ describe('Envirator', () => {
         expect(envirator.provide(key)).to.not.be.undefined;
         expect(envirator.provide(key)).to.equal(String(value));
       });
+    });
+
+    it(`should set environment variables with default values when calling provide`, () => {
+      const envirator = new Envirator({
+        warnOnly: true,
+        logger: {
+          warn: () => {},
+          error: console.error,
+        },
+      });
+
+      expect(envirator.provide('NOW_EXISTS')).to.be.undefined;
+      expect(
+        envirator.provide('NOW_EXISTS', { defaultValue: 'defaults' })
+      ).to.equal('defaults');
+      expect(envirator.provide('NOW_EXISTS')).to.be.undefined;
+
+      expect(
+        envirator.provide('NOW_EXISTS', { defaultValue: 'defaults', set: true })
+      ).to.equal('defaults');
+
+      expect(envirator.provide('NOW_EXISTS')).to.equal('defaults');
+    });
+
+    it(`should set environment variables with default values on construction`, () => {
+      const envirator = new Envirator({
+        warnOnly: true,
+        set: true,
+        logger: {
+          warn: () => {},
+          error: console.error,
+        },
+      });
+
+      expect(envirator.provide('NOW_EXISTS')).to.be.undefined;
+
+      expect(
+        envirator.provide('NOW_EXISTS', { defaultValue: 'defaults' })
+      ).to.equal('defaults');
+      expect(envirator.provide('NOW_EXISTS')).to.equal('defaults');
     });
   });
 
@@ -574,7 +614,7 @@ describe('Envirator', () => {
 
     it('should provide environment based defaults', () => {
       const env = new Envirator({
-        envs: { staging: 'staged', customEnv: 'custom' },
+        environments: { staging: 'staged', customEnv: 'custom' },
         logger: winston,
       });
 
@@ -617,7 +657,7 @@ describe('Envirator', () => {
 
     it('should provide environment based defaults and a default value when environment does not exist', () => {
       const env = new Envirator({
-        envs: { staging: 'staged', customEnv: 'custom' },
+        environments: { staging: 'staged', customEnv: 'custom' },
         logger: winston,
       });
 
@@ -690,14 +730,14 @@ describe('Envirator', () => {
           warn: () => {},
           error: console.error,
         },
-        keyToJsProp: true,
+        camelcase: true,
       });
 
       env.setEnv('NODE_ENV', 'development');
       const opt: EnvManyOptions = {
         key: 'NODE_ENV',
         defaultValue: 'development',
-        keyToJsProp: false,
+        camelcase: false,
       };
       const options = [
         opt,
@@ -705,7 +745,7 @@ describe('Envirator', () => {
         { key: 'UNKNOWN-VAR', defaultValue: 'unknown' },
         { key: 'UNKNOWN-VAR_CHAR', defaultValue: 'meh' },
         { key: 'keyvar', defaultValue: 'content' },
-        { key: 'keyCar', defaultValue: 'con-tent', keyToJsProp: false },
+        { key: 'keyCar', defaultValue: 'con-tent', camelcase: false },
       ];
 
       const envars = env.provideMany(options);
@@ -726,7 +766,7 @@ describe('Envirator', () => {
     });
 
     it('should provide many with key overrides', () => {
-      const env = new Env({ keyToJsProp: true });
+      const env = new Env({ camelcase: true });
 
       const envars = env.provideMany([
         { key: 'TOKEN_SECKRET', keyTo: () => 'secret', defaultValue: 'token' },
@@ -751,7 +791,7 @@ describe('Envirator', () => {
     });
 
     it('should provide many and alter the shape of the final object', () => {
-      const env = new Env({ keyToJsProp: true });
+      const env = new Env({ camelcase: true });
 
       interface JwtOptions {
         secret: string;

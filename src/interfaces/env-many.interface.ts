@@ -1,4 +1,4 @@
-import { EnvOptions } from './env-options.interface';
+import type { EnvOptions } from './env-options.interface';
 
 export type EnvMany = (string | EnvManyOptions)[];
 
@@ -17,11 +17,6 @@ export interface EnvManyOptions extends EnvOptions {
    * @default EnvInitOptions.camelcase - false
    */
   camelcase?: boolean;
-
-  /**
-   * @deprecated Use camelcase
-   */
-  keyToJsProp?: boolean;
 
   /**
    * @description A string, function or array of functions to transform an environment variable name into an object property

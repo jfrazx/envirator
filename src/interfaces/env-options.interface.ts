@@ -1,6 +1,6 @@
-import { Environments } from './env-environments.interface';
-import { EnvLogger } from './env-logger.interface';
-import { Envirator } from '../env/index';
+import type { Environments } from './env-environments.interface';
+import type { EnvLogger } from './env-logger.interface';
+import type { Envirator } from '../env/index';
 
 export type EnvMutator<T = any, R = any> = (value: T) => R;
 export type EnvWarningSuppression = (key: string, env: Envirator) => boolean;
@@ -23,6 +23,16 @@ interface EnvSharedOptions {
    * @default false
    */
   productionDefaults?: boolean;
+
+  /**
+   * @description Specifies if default/mutated values should be set into the environment.
+   *
+   * @note Undefined values are not set
+   *
+   * @type {boolean}
+   * @memberof EnvSharedOptions
+   */
+  set?: boolean;
 
   /**
    * @description Set if empty string is an acceptable environment variable value
@@ -92,23 +102,13 @@ export interface EnvConfigOptions {
 
 export interface EnvInitOptions extends EnvSharedOptions, EnvConfigOptions {
   /**
-   * @deprecated Use environments
-   */
-  envs?: Environments;
-
-  /**
    * @description Overrides the default environment
    * @default development
    */
   defaultEnv?: string;
 
   /**
-   * @deprecated Use camelcase
-   */
-  keyToJsProp?: boolean;
-
-  /**
-   * @description Will transform an environment variable name into a camelcased property
+   * @description Will transform an environment variable name into a camel-cased property
    * @default false
    */
   camelcase?: boolean;

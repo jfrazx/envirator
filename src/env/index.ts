@@ -11,7 +11,7 @@ import {
   isUndefined,
   isEmptyString,
 } from '../helpers';
-import {
+import type {
   EnvMany,
   ResultTo,
   EnvLogger,
@@ -49,7 +49,7 @@ export class Envirator {
   load(path?: string, options?: EnvLoadOptions): void;
   load(path?: any, options: EnvLoadOptions = {}): void {
     if (isObject(path)) {
-      options = path;
+      options = path as EnvLoadOptions;
       path = null;
     }
 
@@ -94,6 +94,7 @@ export class Envirator {
     key: string,
     {
       mutators,
+      set = this.options.set,
       logger = this.options.logger,
       warnOnly = this.options.warnOnly,
       suppressWarnings = this.options.suppressWarnings,
@@ -109,7 +110,20 @@ export class Envirator {
       value
     ) as T;
 
-    return this.determine.environmentOverride(mutatedValue, options);
+    const determinedValue = this.determine.environmentOverride(
+      mutatedValue,
+      options
+    );
+
+    return this.setIfNeeded(key, determinedValue, set);
+  }
+
+  private setIfNeeded<T>(key: string, value: T, shouldSet: boolean): T {
+    if (shouldSet && !isUndefined(value)) {
+      this.setEnv(key, value);
+    }
+
+    return value;
   }
 
   /**
@@ -126,17 +140,12 @@ export class Envirator {
     return shape(
       envars.reduce((memo, envar) => {
         const {
-          camelcase,
           key = envar as string,
           keyTo = defaultMutator,
-          keyToJsProp = this.options.camelcase,
+          camelcase = this.options.camelcase,
         } = envar as EnvManyOptions;
         const opts: EnvOptions = isString(envar) ? {} : envar;
-        const useKey = this.determine.environmentKey(
-          key,
-          camelcase ?? keyToJsProp,
-          keyTo
-        );
+        const useKey = this.determine.environmentKey(key, camelcase, keyTo);
 
         return {
           ...memo,
