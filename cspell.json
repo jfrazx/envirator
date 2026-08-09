@@ -1,7 +1,15 @@
 {
-  "version": "0.1",
+  "version": "0.2",
   "language": "en",
-  "words": ["codecov", "mutators", "envirator", "camelcase", "pino"],
+  "words": [
+    "camelcase",
+    "codecov",
+    "envar",
+    "envars",
+    "envirator",
+    "mutators",
+    "pino"
+  ],
   "ignoreRegExpList": [
     "/from '[a-zA-Z]'/",
     "/\"name\": \"[a-zA-Z]+\"/",

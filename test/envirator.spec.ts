@@ -1,11 +1,8 @@
 import { Env, Envirator, EnvManyResult, EnvManyOptions } from '../src';
-import * as winstonOriginal from 'winston';
 import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { join } from 'path';
 import chalk from 'chalk';
-
-const winston = { ...winstonOriginal };
 
 describe('Envirator', () => {
   let originalEnv: any;
@@ -20,8 +17,8 @@ describe('Envirator', () => {
   });
 
   beforeEach(() => {
-    sinon.stub(winston, 'error');
-    sinon.stub(winston, 'warn');
+    sinon.stub(console, 'error');
+    sinon.stub(console, 'warn');
     sinon.stub(process, 'exit');
   });
 
@@ -40,15 +37,15 @@ describe('Envirator', () => {
         const env = new Envirator({
           noDefaultEnv: true,
           warnOnly: true,
-          logger: winston,
+          logger: console,
         });
 
         const currentEnv = env.currentEnv;
 
         expect(currentEnv).to.be.undefined;
-        sinon.assert.called(winston.error as any);
+        sinon.assert.called(console.error as any);
         sinon.assert.calledWith(
-          winston.error as any,
+          console.error as any,
           chalk.red(`[ENV ERROR]: Missing environment variable 'NODE_ENV'`)
         );
         sinon.assert.called(process.exit as any);
@@ -59,7 +56,7 @@ describe('Envirator', () => {
         const env = new Envirator({
           noDefaultEnv: true,
           warnOnly: true,
-          logger: winston,
+          logger: console,
         });
 
         env.setEnv('NODE_ENV', '');
@@ -67,9 +64,9 @@ describe('Envirator', () => {
         const currentEnv = env.currentEnv;
 
         expect(currentEnv).to.be.undefined;
-        sinon.assert.called(winston.error as any);
+        sinon.assert.called(console.error as any);
         sinon.assert.calledWith(
-          winston.error as any,
+          console.error as any,
           chalk.red(`[ENV ERROR]: Missing environment variable 'NODE_ENV'`)
         );
         sinon.assert.called(process.exit as any);
@@ -79,7 +76,7 @@ describe('Envirator', () => {
       it('should exit when allowEmptyString is set to false during initialization', () => {
         const env = new Envirator({
           allowEmptyString: false,
-          logger: winston,
+          logger: console,
         });
 
         env.setEnv('EMPTY', '');
@@ -88,9 +85,9 @@ describe('Envirator', () => {
 
         expect(empty).to.be.undefined;
 
-        sinon.assert.called(winston.error as any);
+        sinon.assert.called(console.error as any);
         sinon.assert.calledWith(
-          winston.error as any,
+          console.error as any,
           chalk.red(`[ENV ERROR]: Missing environment variable 'EMPTY'`)
         );
         sinon.assert.called(process.exit as any);
@@ -99,7 +96,7 @@ describe('Envirator', () => {
 
       it('should exit when allowEmptyString is set to false during provide', () => {
         const env = new Envirator({
-          logger: winston,
+          logger: console,
         });
 
         env.setEnv('EMPTY', '     ');
@@ -108,9 +105,9 @@ describe('Envirator', () => {
 
         expect(empty).to.be.undefined;
 
-        sinon.assert.called(winston.error as any);
+        sinon.assert.called(console.error as any);
         sinon.assert.calledWith(
-          winston.error as any,
+          console.error as any,
           chalk.red(`[ENV ERROR]: Missing environment variable 'EMPTY'`)
         );
         sinon.assert.called(process.exit as any);
@@ -120,16 +117,16 @@ describe('Envirator', () => {
       it('should exit when allowEmptyString is set to false during provide with no envVar', () => {
         const env = new Envirator({
           allowEmptyString: false,
-          logger: winston,
+          logger: console,
         });
 
         const empty = env.provide('EMPTY', { allowEmptyString: false });
 
         expect(empty).to.be.undefined;
 
-        sinon.assert.called(winston.error as any);
+        sinon.assert.called(console.error as any);
         sinon.assert.calledWith(
-          winston.error as any,
+          console.error as any,
           chalk.red(`[ENV ERROR]: Missing environment variable 'EMPTY'`)
         );
         sinon.assert.called(process.exit as any);
@@ -139,7 +136,7 @@ describe('Envirator', () => {
       it('should NOT exit when allowEmptyString is set to false during initialization, but true with provide', () => {
         const env = new Envirator({
           allowEmptyString: false,
-          logger: winston,
+          logger: console,
         });
 
         env.setEnv('EMPTY', '');
@@ -148,7 +145,7 @@ describe('Envirator', () => {
 
         expect(empty).to.be.equal('');
 
-        sinon.assert.notCalled(winston.error as any);
+        sinon.assert.notCalled(console.error as any);
         sinon.assert.notCalled(process.exit as any);
       });
     });
@@ -156,6 +153,8 @@ describe('Envirator', () => {
     describe('Warn', () => {
       it('should warn when an env var does not exist', () => {
         const envirator = new Envirator({ warnOnly: true });
+
+        sinon.restore();
 
         const warn = sinon.stub(console, 'warn');
 
@@ -174,7 +173,7 @@ describe('Envirator', () => {
         const env = new Envirator({
           allowEmptyString: false,
           warnOnly: true,
-          logger: winston,
+          logger: console,
         });
 
         env.setEnv('EMPTY', '');
@@ -183,9 +182,9 @@ describe('Envirator', () => {
 
         expect(empty).to.be.undefined;
 
-        sinon.assert.called(winston.warn as any);
+        sinon.assert.called(console.warn as any);
         sinon.assert.calledWith(
-          winston.warn as any,
+          console.warn as any,
           chalk.yellow(`[ENV WARN]: Missing environment variable 'EMPTY'`)
         );
         sinon.assert.notCalled(process.exit as any);
@@ -194,7 +193,7 @@ describe('Envirator', () => {
       it('should warn when allowEmptyString is set to false during provide', () => {
         const env = new Envirator({
           warnOnly: true,
-          logger: winston,
+          logger: console,
         });
 
         env.setEnv('EMPTY', '');
@@ -203,9 +202,9 @@ describe('Envirator', () => {
 
         expect(empty).to.be.undefined;
 
-        sinon.assert.called(winston.warn as any);
+        sinon.assert.called(console.warn as any);
         sinon.assert.calledWith(
-          winston.warn as any,
+          console.warn as any,
           chalk.yellow(`[ENV WARN]: Missing environment variable 'EMPTY'`)
         );
         sinon.assert.notCalled(process.exit as any);
@@ -215,7 +214,7 @@ describe('Envirator', () => {
         const env = new Envirator({
           allowEmptyString: false,
           warnOnly: true,
-          logger: winston,
+          logger: console,
         });
 
         env.setEnv('EMPTY', '');
@@ -224,7 +223,7 @@ describe('Envirator', () => {
 
         expect(empty).to.be.equal('');
 
-        sinon.assert.notCalled(winston.warn as any);
+        sinon.assert.notCalled(console.warn as any);
         sinon.assert.notCalled(process.exit as any);
       });
 
@@ -232,26 +231,26 @@ describe('Envirator', () => {
         const env = new Envirator({
           suppressWarnings: true,
           warnOnly: true,
-          logger: winston,
+          logger: console,
         });
 
         const empty = env.provide('EMPTY');
 
         expect(empty).to.be.undefined;
-        sinon.assert.notCalled(winston.warn as any);
+        sinon.assert.notCalled(console.warn as any);
         sinon.assert.notCalled(process.exit as any);
       });
 
       it('should not output warnings when suppressed with true via options', () => {
         const env = new Envirator({
           warnOnly: true,
-          logger: winston,
+          logger: console,
         });
 
         const empty = env.provide('EMPTY', { suppressWarnings: true });
 
         expect(empty).to.be.undefined;
-        sinon.assert.notCalled(winston.warn as any);
+        sinon.assert.notCalled(console.warn as any);
         sinon.assert.notCalled(process.exit as any);
       });
 
@@ -259,20 +258,20 @@ describe('Envirator', () => {
         const env = new Envirator({
           suppressWarnings: ['development', 'test'],
           warnOnly: true,
-          logger: winston,
+          logger: console,
         });
 
         const empty = env.provide('EMPTY');
 
         expect(empty).to.be.undefined;
-        sinon.assert.notCalled(winston.warn as any);
+        sinon.assert.notCalled(console.warn as any);
         sinon.assert.notCalled(process.exit as any);
       });
 
       it('should not output warnings when suppressed with an array of environments via options', () => {
         const env = new Envirator({
           warnOnly: true,
-          logger: winston,
+          logger: console,
         });
 
         const empty = env.provide('EMPTY', {
@@ -280,7 +279,7 @@ describe('Envirator', () => {
         });
 
         expect(empty).to.be.undefined;
-        sinon.assert.notCalled(winston.warn as any);
+        sinon.assert.notCalled(console.warn as any);
         sinon.assert.notCalled(process.exit as any);
       });
 
@@ -288,20 +287,20 @@ describe('Envirator', () => {
         const env = new Envirator({
           suppressWarnings: (_key, env) => !env.isProduction,
           warnOnly: true,
-          logger: winston,
+          logger: console,
         });
 
         const empty = env.provide('EMPTY');
 
         expect(empty).to.be.undefined;
-        sinon.assert.notCalled(winston.warn as any);
+        sinon.assert.notCalled(console.warn as any);
         sinon.assert.notCalled(process.exit as any);
       });
 
       it('should not output warnings when suppressed with a function via options', () => {
         const env = new Envirator({
           warnOnly: true,
-          logger: winston,
+          logger: console,
         });
 
         const empty = env.provide('EMPTY', {
@@ -309,7 +308,7 @@ describe('Envirator', () => {
         });
 
         expect(empty).to.be.undefined;
-        sinon.assert.notCalled(winston.warn as any);
+        sinon.assert.notCalled(console.warn as any);
         sinon.assert.notCalled(process.exit as any);
       });
 
@@ -317,7 +316,7 @@ describe('Envirator', () => {
         const env = new Envirator({
           suppressWarnings: (_key, env) => !env.isTest,
           warnOnly: true,
-          logger: winston,
+          logger: console,
         });
 
         const empty = env.provide('EMPTY', {
@@ -325,7 +324,7 @@ describe('Envirator', () => {
         });
 
         expect(empty).to.be.undefined;
-        sinon.assert.notCalled(winston.warn as any);
+        sinon.assert.notCalled(console.warn as any);
         sinon.assert.notCalled(process.exit as any);
       });
 
@@ -333,7 +332,7 @@ describe('Envirator', () => {
         const env = new Envirator({
           suppressWarnings: ['development'],
           warnOnly: true,
-          logger: winston,
+          logger: console,
         });
 
         const empty = env.provide('EMPTY', {
@@ -341,41 +340,41 @@ describe('Envirator', () => {
         });
 
         expect(empty).to.be.undefined;
-        sinon.assert.calledOnce(winston.warn as any);
+        sinon.assert.calledOnce(console.warn as any);
         sinon.assert.notCalled(process.exit as any);
       });
     });
 
     it('should accept an alternate logger when instantiating', () => {
-      const envirator = new Envirator({ logger: winston });
+      const envirator = new Envirator({ logger: console });
 
       expect(envirator.provide('NODE_ENVZ')).to.be.undefined;
 
       sinon.assert.called(process.exit as any);
-      sinon.assert.called(winston.error as any);
+      sinon.assert.called(console.error as any);
       sinon.assert.calledWith(process.exit as any, 1);
       sinon.assert.calledWith(
-        winston.error as any,
+        console.error as any,
         chalk.red(`[ENV ERROR]: Missing environment variable 'NODE_ENVZ'`)
       );
     });
 
     it('should override instantiated values', () => {
-      const envirator = new Envirator({ warnOnly: true, logger: winston });
+      const envirator = new Envirator({ warnOnly: true, logger: console });
 
       expect(envirator.provide('WAT')).to.be.undefined;
 
-      sinon.assert.called(winston.warn as any);
+      sinon.assert.called(console.warn as any);
       sinon.assert.calledWith(
-        winston.warn as any,
+        console.warn as any,
         chalk.yellow(`[ENV WARN]: Missing environment variable 'WAT'`)
       );
 
       expect(envirator.provide('WAT', { warnOnly: false })).be.undefined;
 
-      sinon.assert.called(winston.error as any);
+      sinon.assert.called(console.error as any);
       sinon.assert.calledWith(
-        winston.error as any,
+        console.error as any,
         chalk.red(`[ENV ERROR]: Missing environment variable 'WAT'`)
       );
 
@@ -490,15 +489,15 @@ describe('Envirator', () => {
     it('should not warn in production', () => {
       const envirator = new Envirator({
         warnOnly: true,
-        logger: winston,
+        logger: console,
       });
 
       envirator.setEnv('NODE_ENV', 'production');
 
       expect(envirator.provide('SOME_VAR')).to.be.undefined;
 
-      sinon.assert.notCalled(winston.warn as any);
-      sinon.assert.called(winston.error as any);
+      sinon.assert.notCalled(console.warn as any);
+      sinon.assert.called(console.error as any);
       sinon.assert.called(process.exit as any);
       sinon.assert.calledWith(process.exit as any, 1);
     });
@@ -506,7 +505,7 @@ describe('Envirator', () => {
     it('should allow production defaults when initialized', () => {
       const envirator = new Envirator({
         warnOnly: true,
-        logger: winston,
+        logger: console,
         productionDefaults: true,
       });
 
@@ -520,7 +519,7 @@ describe('Envirator', () => {
     it('should allow production defaults on request', () => {
       const envirator = new Envirator({
         warnOnly: true,
-        logger: winston,
+        logger: console,
       });
 
       envirator.setEnv('NODE_ENV', 'production');
@@ -559,7 +558,7 @@ describe('Envirator', () => {
     it('should not provide defaults during production', () => {
       const envirator = new Envirator({
         warnOnly: true,
-        logger: winston,
+        logger: console,
       });
 
       envirator.setEnv('NODE_ENV', 'production');
@@ -567,7 +566,7 @@ describe('Envirator', () => {
       expect(envirator.provide('SOME_VAR', { defaultValue: 'someValue' })).to.be
         .undefined;
 
-      sinon.assert.called(winston.error as any);
+      sinon.assert.called(console.error as any);
       sinon.assert.called(process.exit as any);
       sinon.assert.calledWith(process.exit as any, 1);
     });
@@ -575,7 +574,7 @@ describe('Envirator', () => {
     it('should provide environment based defaults', () => {
       const env = new Envirator({
         envs: { staging: 'staged', customEnv: 'custom' },
-        logger: winston,
+        logger: console,
       });
 
       const options = {
@@ -612,13 +611,13 @@ describe('Envirator', () => {
       const noneVar = env.provide('FORT', options);
       expect(noneVar).to.be.undefined;
 
-      sinon.assert.called(winston.error as any);
+      sinon.assert.called(console.error as any);
     });
 
     it('should provide environment based defaults and a default value when environment does not exist', () => {
       const env = new Envirator({
         envs: { staging: 'staged', customEnv: 'custom' },
-        logger: winston,
+        logger: console,
       });
 
       const options = {
@@ -654,7 +653,7 @@ describe('Envirator', () => {
       const noneVar = env.provide('FORT', options);
       expect(noneVar).to.be.equal(3456);
 
-      sinon.assert.notCalled(winston.error as any);
+      sinon.assert.notCalled(console.error as any);
     });
   });
 

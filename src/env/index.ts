@@ -170,6 +170,17 @@ export class Envirator {
   }
 
   /**
+   * Property that indicates if the current environment is not production
+   *
+   * @readonly
+   * @type {boolean}
+   * @memberof Envirator
+   */
+  get isNotProduction(): boolean {
+    return !this.isProduction;
+  }
+
+  /**
    * Property that indicates if the current environment is development
    *
    * @readonly
@@ -178,6 +189,17 @@ export class Envirator {
    */
   get isDevelopment(): boolean {
     return this.currentEnv === this.options.environments.development;
+  }
+
+  /**
+   * Property that indicates if the current environment is not development
+   *
+   * @readonly
+   * @type {boolean}
+   * @memberof Envirator
+   */
+  get isNotDevelopment(): boolean {
+    return !this.isDevelopment;
   }
 
   /**
@@ -192,6 +214,17 @@ export class Envirator {
   }
 
   /**
+   * Property that indicates if the current environment is not test
+   *
+   * @readonly
+   * @type {boolean}
+   * @memberof Envirator
+   */
+  get isNotTest(): boolean {
+    return !this.isTest;
+  }
+
+  /**
    * Property that indicates if the current environment is staging
    *
    * @readonly
@@ -200,6 +233,17 @@ export class Envirator {
    */
   get isStaging(): boolean {
     return this.currentEnv === this.options.environments.staging;
+  }
+
+  /**
+   * Property that indicates if the current environment is not staging
+   *
+   * @readonly
+   * @type {boolean}
+   * @memberof Envirator
+   */
+  get isNotStaging(): boolean {
+    return !this.isStaging;
   }
 
   /**
@@ -228,7 +272,7 @@ export class Envirator {
   }
 
   /**
-   *
+   * Exit the process or warn about missing environment variables
    *
    * @private
    * @param {string} key

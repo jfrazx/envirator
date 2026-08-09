@@ -1,11 +1,8 @@
-import * as winstonOriginal from 'winston';
 import { Envirator } from '../src';
 import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { join } from 'path';
 import chalk from 'chalk';
-
-const winston = { ...winstonOriginal };
 
 describe('LoadConfig', () => {
   let originalEnv: any;
@@ -20,8 +17,8 @@ describe('LoadConfig', () => {
   });
 
   beforeEach(() => {
-    sinon.stub(winston, 'error');
-    sinon.stub(winston, 'warn');
+    sinon.stub(console, 'error');
+    sinon.stub(console, 'warn');
     sinon.stub(process, 'exit');
   });
 
@@ -72,7 +69,7 @@ describe('LoadConfig', () => {
 
     envirator.load(join(__dirname, '.env.development'));
 
-    const port = envirator.provide('PORTZ', { logger: winston });
+    const port = envirator.provide('PORTZ', { logger: console });
     const session = envirator.provide('SESSIONZ');
     const empty = envirator.provide('I_AM_EMPTY_STRING');
 
@@ -87,7 +84,7 @@ describe('LoadConfig', () => {
   });
 
   it('should exit if config loading fails', () => {
-    const error = sinon.stub(console, 'error');
+    const error = console.error as sinon.SinonStub;
 
     const envirator = new Envirator();
 
@@ -107,7 +104,7 @@ describe('LoadConfig', () => {
   });
 
   it('should exit when loading and noDefaultEnv is set', () => {
-    const error = sinon.stub(console, 'error');
+    const error = console.error as sinon.SinonStub;
     const env = new Envirator({
       noDefaultEnv: true,
       logger: {
