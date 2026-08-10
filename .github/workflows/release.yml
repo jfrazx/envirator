@@ -56,6 +56,6 @@ jobs:
         run: npm run build
 
       - name: Release
+        run: npx semantic-release -b master -p @semantic-release/commit-analyzer -p @semantic-release/github -p @semantic-release/release-notes-generator -p @semantic-release/npm
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-        run: npm run release

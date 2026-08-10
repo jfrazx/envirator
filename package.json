@@ -41,8 +41,7 @@
     "coverage:test": "nyc mocha",
     "check": "npm outdated",
     "nyc": "nyc",
-    "prepublishOnly": "npm run build",
-    "release": "semantic-release"
+    "prepublishOnly": "npm run build"
   },
   "repository": {
     "type": "git",
