@@ -6,7 +6,12 @@ export interface EnvManyResult<T = any> {
   [key: string]: T;
 }
 
-export interface EnvManyOptions extends EnvOptions {
+/**
+ * `onError` is omitted deliberately. provideMany collects every missing key and
+ * raises a single aggregate error, so a per-entry failure policy could never be
+ * honoured. Supply `onError` when constructing Envirator, or catch the error.
+ */
+export interface EnvManyOptions extends Omit<EnvOptions, 'onError'> {
   /**
    * @description An environment variable
    */
@@ -17,11 +22,6 @@ export interface EnvManyOptions extends EnvOptions {
    * @default EnvInitOptions.camelcase - false
    */
   camelcase?: boolean;
-
-  /**
-   * @deprecated Use camelcase
-   */
-  keyToJsProp?: boolean;
 
   /**
    * @description A string, function or array of functions to transform an environment variable name into an object property

@@ -1,18 +1,16 @@
+.DS_Store
+*/.DS_Store
 
-*.map
-*.js
 *.log
 *.pid
-.DS_Store
-*.d.ts
-logs
 *.lcov
+*.tgz
+logs
 
-!examples/**/*
+# build output -- scoped to dist so config files such as
+# eslint.config.mjs are never silently ignored
 dist/
 
 node_modules/
 .nyc_output/
 coverage/
-
-*/.DS_Store

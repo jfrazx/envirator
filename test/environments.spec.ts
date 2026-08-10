@@ -76,6 +76,34 @@ describe('Environments', () => {
     expect(env.isTest).to.be.false;
   });
 
+  it('should provide the inverse boolean for each environment', () => {
+    const env = createEnv();
+
+    env.setEnv('NODE_ENV', Environment.Production);
+    expect(env.isNotProduction).to.be.false;
+    expect(env.isNotDevelopment).to.be.true;
+    expect(env.isNotStaging).to.be.true;
+    expect(env.isNotTest).to.be.true;
+
+    env.setEnv('NODE_ENV', Environment.Development);
+    expect(env.isNotProduction).to.be.true;
+    expect(env.isNotDevelopment).to.be.false;
+    expect(env.isNotStaging).to.be.true;
+    expect(env.isNotTest).to.be.true;
+
+    env.setEnv('NODE_ENV', Environment.Staging);
+    expect(env.isNotProduction).to.be.true;
+    expect(env.isNotDevelopment).to.be.true;
+    expect(env.isNotStaging).to.be.false;
+    expect(env.isNotTest).to.be.true;
+
+    env.setEnv('NODE_ENV', Environment.Test);
+    expect(env.isNotProduction).to.be.true;
+    expect(env.isNotDevelopment).to.be.true;
+    expect(env.isNotStaging).to.be.true;
+    expect(env.isNotTest).to.be.false;
+  });
+
   it('should allow environment name overrides', () => {
     const nodeEnv = 'NODE_ENV';
     const test = 'TESTs';

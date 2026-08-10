@@ -1,11 +1,7 @@
-import * as winstonOriginal from 'winston';
-import { Envirator } from '../src';
+import { Envirator, EnvironmentConfigError } from '../src';
 import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { join } from 'path';
-import chalk from 'chalk';
-
-const winston = { ...winstonOriginal };
 
 describe('LoadConfig', () => {
   let originalEnv: any;
@@ -20,8 +16,8 @@ describe('LoadConfig', () => {
   });
 
   beforeEach(() => {
-    sinon.stub(winston, 'error');
-    sinon.stub(winston, 'warn');
+    sinon.stub(console, 'error');
+    sinon.stub(console, 'warn');
     sinon.stub(process, 'exit');
   });
 
@@ -72,7 +68,7 @@ describe('LoadConfig', () => {
 
     envirator.load(join(__dirname, '.env.development'));
 
-    const port = envirator.provide('PORTZ', { logger: winston });
+    const port = envirator.provide('PORTZ', { logger: console });
     const session = envirator.provide('SESSIONZ');
     const empty = envirator.provide('I_AM_EMPTY_STRING');
 
@@ -86,44 +82,71 @@ describe('LoadConfig', () => {
     expect(empty).to.equal('');
   });
 
-  it('should exit if config loading fails', () => {
-    const error = sinon.stub(console, 'error');
+  it('should not write to stdout when loading a config', () => {
+    const write = sinon.stub(process.stdout, 'write').returns(true);
+    const env = new Envirator();
 
-    const envirator = new Envirator();
+    try {
+      env.load(join(__dirname, '.env.development'));
+    } finally {
+      write.restore();
+    }
 
-    envirator.load('config.fail', {
-      logger: console,
-    });
-
-    sinon.assert.called(error);
-    sinon.assert.calledWith(
-      error,
-      chalk.red(
-        `[ENV ERROR] failed to load 'config.fail': Error: ENOENT: no such file or directory, open 'config.fail'`
-      )
-    );
-    sinon.assert.called(process.exit as any);
-    sinon.assert.calledWith(process.exit as any, 1);
+    sinon.assert.notCalled(write);
   });
 
-  it('should exit when loading and noDefaultEnv is set', () => {
-    const error = sinon.stub(console, 'error');
+  it('should allow the caller to re-enable dotenv output', () => {
+    const write = sinon.stub(process.stdout, 'write').returns(true);
+    const env = new Envirator();
+
+    try {
+      env.load(join(__dirname, '.env.development'), {
+        config: { quiet: false },
+      });
+    } finally {
+      write.restore();
+    }
+
+    sinon.assert.called(write);
+  });
+
+  it('should throw if config loading fails', () => {
+    const envirator = new Envirator();
+
+    expect(() => envirator.load('config.fail')).to.throw(
+      EnvironmentConfigError,
+      `Failed to load environment config 'config.fail': Error: ENOENT: no such file or directory, open 'config.fail'`
+    );
+
+    sinon.assert.notCalled(process.exit as any);
+    sinon.assert.notCalled(console.error as sinon.SinonStub);
+  });
+
+  it('should expose the path and cause on the thrown error', () => {
+    const envirator = new Envirator();
+
+    try {
+      envirator.load('config.fail');
+      expect.fail('expected load to throw');
+    } catch (error) {
+      expect(error).to.be.instanceOf(EnvironmentConfigError);
+      expect((error as EnvironmentConfigError).path).to.equal('config.fail');
+      expect((error as EnvironmentConfigError).cause).to.be.instanceOf(Error);
+    }
+  });
+
+  it('should throw when loading and noDefaultEnv is set', () => {
     const env = new Envirator({
       noDefaultEnv: true,
       logger: {
         warn: () => {},
-        error,
+        error: console.error,
       },
     });
 
-    env.load();
-
-    sinon.assert.called(error);
-    sinon.assert.calledWith(
-      error,
-      chalk.red(
-        `[ENV ERROR] failed to load '.env': Error: ENOENT: no such file or directory, open '.env'`
-      )
+    expect(() => env.load()).to.throw(
+      EnvironmentConfigError,
+      `Failed to load environment config '.env': Error: ENOENT: no such file or directory, open '.env'`
     );
   });
 });

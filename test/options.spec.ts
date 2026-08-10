@@ -74,48 +74,6 @@ describe('EnvOptionsContainer', () => {
     });
   });
 
-  describe('Deprecated', () => {
-    it('should assign deprecated keyToJsProp option to camelcase', () => {
-      const options = new EnvOptionsContainer({
-        keyToJsProp: true,
-      });
-
-      expect(options.camelcase).to.be.true;
-    });
-
-    it('should prioritize camelcase over keyToJsProp', () => {
-      const options = new EnvOptionsContainer({
-        camelcase: false,
-        keyToJsProp: true,
-      });
-
-      expect(options.camelcase).to.be.false;
-    });
-
-    it('should assign deprecated envs option to environments', () => {
-      const options = new EnvOptionsContainer({
-        envs: {
-          development: 'develop',
-        },
-      });
-
-      expect(options.environments.development).to.be.equal('develop');
-    });
-
-    it('should prioritize environments over envs', () => {
-      const options = new EnvOptionsContainer({
-        envs: {
-          development: 'develop',
-        },
-        environments: {
-          development: 'in-development',
-        },
-      });
-
-      expect(options.environments.development).to.be.equal('in-development');
-    });
-  });
-
   describe('Environments', () => {
     it('should allow overriding the predefined environments', () => {
       const test = 'TESTable';

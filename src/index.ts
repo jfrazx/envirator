@@ -3,6 +3,7 @@ import { Envirator } from './env';
 
 export { Environment } from './enums';
 export * from './interfaces';
+export * from './errors';
 export * from './env';
 
 export const Env = Envirator;

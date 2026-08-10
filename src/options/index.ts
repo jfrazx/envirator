@@ -1,5 +1,6 @@
 import {
   EnvInitOptions,
+  EnvErrorHandler,
   EnvLogger,
   Environments,
   WarningSuppressor,
@@ -14,10 +15,9 @@ const defaultEnvs: Required<Environments> = {
   test: Environment.Test,
 };
 
-type DeprecatedOptions = 'envs' | 'keyToJsProp';
+const noop = () => {};
 
-interface WorkingOptions
-  extends Required<Omit<EnvInitOptions, DeprecatedOptions>> {}
+interface WorkingOptions extends Required<EnvInitOptions> {}
 
 export class EnvOptionsContainer implements WorkingOptions {
   readonly environments!: Required<Environments>;
@@ -27,6 +27,7 @@ export class EnvOptionsContainer implements WorkingOptions {
   readonly doNotWarnIn: string[];
   readonly noDefaultEnv: boolean;
   readonly defaultEnv: string;
+  readonly onError: EnvErrorHandler;
   readonly camelcase: boolean;
   readonly logger: EnvLogger;
   readonly warnOnly: boolean;
@@ -38,19 +39,19 @@ export class EnvOptionsContainer implements WorkingOptions {
     suppressWarnings = false,
     allowEmptyString = true,
     noDefaultEnv = false,
+    onError = noop,
     environments = {},
     logger = console,
     warnOnly = false,
-    keyToJsProp,
+    camelcase = false,
     doNotWarnIn,
     defaultEnv,
-    camelcase,
-    envs = {},
   }: EnvInitOptions = {}) {
     this.logger = logger;
+    this.onError = onError;
     this.nodeEnv = nodeEnv;
     this.warnOnly = warnOnly;
-    this.camelcase = camelcase ?? keyToJsProp ?? false;
+    this.camelcase = camelcase;
     this.noDefaultEnv = noDefaultEnv;
     this.allowEmptyString = allowEmptyString;
     this.productionDefaults = productionDefaults;
@@ -59,7 +60,6 @@ export class EnvOptionsContainer implements WorkingOptions {
       : suppressWarnings;
     this.environments = Object.entries({
       ...defaultEnvs,
-      ...envs,
       ...environments,
     }).reduce(
       (memo, [key, value]) => ({
@@ -71,8 +71,8 @@ export class EnvOptionsContainer implements WorkingOptions {
 
     this.defaultEnv = this.noDefaultEnv
       ? ''
-      : this.environments[defaultEnv as string]?.trim() ??
-        this.environments.development;
+      : (this.environments[defaultEnv as string]?.trim() ??
+        this.environments.development);
 
     this.doNotWarnIn = doNotWarnIn?.map(toLowerCase) ?? [
       this.environments.production,

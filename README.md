@@ -1,6 +1,14 @@
 # Envirator
 
+[![Tests](https://github.com/jfrazx/envirator/actions/workflows/tests.yml/badge.svg)](https://github.com/jfrazx/envirator/actions/workflows/tests.yml)
+[![CodeQL](https://github.com/jfrazx/envirator/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/jfrazx/envirator/actions/workflows/codeql-analysis.yml)
+[![npm version](https://img.shields.io/npm/v/@status/envirator.svg)](https://www.npmjs.com/package/@status/envirator)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 Ensure environment variable availability during program initialization.
+
+Ships both CommonJS and ES module builds with TypeScript declarations for each.
+Requires Node 22 or later.
 
 ---
 
@@ -26,9 +34,57 @@ const env = new Envirator();
 const port = env.provide('PORT');
 ```
 
-If `PORT` exists it will be of type `string`. Otherwise, a message will print to the console and immediately exit.
+If `PORT` exists it will be of type `string`. Otherwise a `MissingEnvironmentError` is thrown, which
+ends startup immediately unless the application catches it.
 
 `Envirator` may also be imported by its alias: `Env`.
+
+### Errors
+
+A missing required variable throws `MissingEnvironmentError`, carrying every missing key on `keys`
+so consumers can branch on the failure without parsing the message:
+
+```typescript
+import { createEnv, MissingEnvironmentError } from '@status/envirator';
+
+const env = createEnv();
+
+try {
+  const config = env.provideMany(['DB_HOST', 'DB_USER', 'DB_PASSWORD']);
+} catch (error) {
+  if (error instanceof MissingEnvironmentError) {
+    console.error(`missing: ${error.keys.join(', ')}`);
+  }
+  throw error;
+}
+```
+
+`provideMany` collects **every** missing key and throws once, so an environment missing five
+variables is diagnosed in a single run rather than five.
+
+A config file that fails to load throws `EnvironmentConfigError`, which exposes the attempted
+`path` and the underlying error as `cause`. Both extend `EnviratorError`.
+
+#### Supplying a failure policy
+
+Envirator throws rather than exiting, which keeps the failure diagnosable, catchable and testable.
+An uncaught error still terminates the process with status 1, so fail-fast startup behaviour is
+unchanged.
+
+If the application wants to decide process lifetime itself, supply `onError`. It receives the error
+before it is thrown:
+
+```typescript
+const env = createEnv({
+  onError: (error) => {
+    console.error(error.message);
+    process.exit(1);
+  },
+});
+```
+
+`onError` may also be passed per call to `provide` and `load`. If the handler returns rather than
+terminating, the error is still thrown.
 
 ### Initialization
 
@@ -73,19 +129,20 @@ Be aware that values will be lower-cased.
 
 ### Initialization Options
 
-| Option             | Type                                                            | Default Value             | Description                                                                                                               |
-| ------------------ | --------------------------------------------------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| nodeEnv            | string                                                          | NODE_ENV                  | Change where to locate the Node environment.                                                                              |
-| logger             | EnvLogger                                                       | console                   | Prints warning and error messages to the terminal.                                                                        |
-| environments       | Environments                                                    | { [key: string]: string } | An object that allows overriding of `production`, `development`, `test` and `staging` strings                             |
-| defaultEnv         | string                                                          | development               | Designate the default environment. This should be a key from the `environments` option.                                   |
-| noDefaultEnv       | boolean                                                         | false                     | Specify if you do not want to provide a default environment if one is not set.                                            |
-| allowEmptyString   | boolean                                                         | true                      | Specify if an empty string is an acceptable environment variable value.                                                   |
-| productionDefaults | boolean                                                         | false                     | Specifies if supplied default values should be allowed in a production environment.                                       |
-| warnOnly           | boolean                                                         | false                     | Warn of missing environment variables rather than exit. Does nothing in production environment.                           |
-| suppressWarnings   | boolean \| string[] \| (key: string, env: Envirator) => boolean | false                     | Specify if warning output should be suppressed.                                                                           |
-| camelcase          | boolean                                                         | false                     | If true, when calling provideMany, the requested environment variable key will be transformed to camelcase.               |
-| doNotWarnIn        | string[]                                                        | [production]              | An array of Environment strings in which `warnOnly` is ignored and missing environment variables will force program exit. |
+| Option             | Type                                                            | Default Value             | Description                                                                                                 |
+| ------------------ | --------------------------------------------------------------- | ------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| nodeEnv            | string                                                          | NODE_ENV                  | Change where to locate the Node environment.                                                                |
+| logger             | EnvLogger                                                       | console                   | Prints warning messages to the terminal. Failures are thrown, not logged.                                   |
+| environments       | Environments                                                    | { [key: string]: string } | An object that allows overriding of `production`, `development`, `test` and `staging` strings               |
+| defaultEnv         | string                                                          | development               | Designate the default environment. This should be a key from the `environments` option.                     |
+| noDefaultEnv       | boolean                                                         | false                     | Specify if you do not want to provide a default environment if one is not set.                              |
+| allowEmptyString   | boolean                                                         | true                      | Specify if an empty string is an acceptable environment variable value.                                     |
+| productionDefaults | boolean                                                         | false                     | Specifies if supplied default values should be allowed in a production environment.                         |
+| warnOnly           | boolean                                                         | false                     | Warn of missing environment variables rather than throw. Does nothing in production environment.            |
+| suppressWarnings   | boolean \| string[] \| (key: string, env: Envirator) => boolean | false                     | Specify if warning output should be suppressed.                                                             |
+| camelcase          | boolean                                                         | false                     | If true, when calling provideMany, the requested environment variable key will be transformed to camelcase. |
+| doNotWarnIn        | string[]                                                        | [production]              | An array of Environment strings in which `warnOnly` is ignored and missing environment variables throw.     |
+| onError            | (error: EnviratorError) => void                                 | undefined                 | Supplies the failure policy. Receives the error before it is thrown.                                        |
 
 ### Configs
 
@@ -105,7 +162,7 @@ env.load('./path/to/config');
 ```
 
 Environment based loading expects a file named `.env.environment` in the root of your project. For example, a development based environment would attempt to load `.env.development`.  
-If the file does not exist Envirator will exit the program.
+If the file does not exist Envirator throws an `EnvironmentConfigError`.
 
 ### Environment Variables
 
@@ -270,6 +327,23 @@ if (env.isTest) {
 }
 ```
 
+Each has a negated counterpart, which reads better than negating the positive form:
+
+```typescript
+if (env.isNotProduction) {
+  // do stuff
+}
+if (env.isNotDevelopment) {
+  // do stuff
+}
+if (env.isNotStaging) {
+  // do stuff
+}
+if (env.isNotTest) {
+  // do stuff
+}
+```
+
 Envirator can be extended if you want to use custom environment helpers:
 
 ```typescript
@@ -315,7 +389,7 @@ const { dbUser, dbPassword } = env.provideMany([
 ]);
 ```
 
-A warning is issued to the console rather than immediately exiting, unless the environment is production.
+A warning is issued to the console rather than throwing, unless the environment is production.
 
 \---
 
@@ -360,3 +434,50 @@ const env = new Envirator({
   doNotWarnIn: ['prod', 'staging'],
 });
 ```
+
+---
+
+## Migrating to v2
+
+**Missing variables throw instead of exiting.**
+
+`provide`, `provideMany`, `load` and `currentEnv` previously logged a red `[ENV ERROR]` line and
+called `process.exit(1)`. On a piped stdout that exit discarded the buffered log line, so the
+message meant to explain the failure was frequently the thing that got dropped. They now throw
+instead.
+
+An uncaught error still exits with status 1, so no orchestrator contract changes. If code relied
+on the process dying inside the call, either catch the error or supply `onError`:
+
+```typescript
+const env = createEnv({
+  onError: (error) => {
+    console.error(error.message);
+    process.exit(1);
+  },
+});
+```
+
+**Failures are no longer logged.** An uncaught error prints itself; logging as well meant every
+failure was reported twice in two formats. `logger` is now used only for warnings.
+
+**`provideMany` reports every missing key at once** rather than dying on the first.
+
+**The deprecated `envs` and `keyToJsProp` options are removed.** Use `environments` and
+`camelcase` instead -- they accept the same values and have been the documented spelling for
+several releases.
+
+```typescript
+// before
+new Envirator({ envs: { staging: 'staged' }, keyToJsProp: true });
+
+// after
+new Envirator({ environments: { staging: 'staged' }, camelcase: true });
+```
+
+**Protected methods renamed**, which affects subclasses only: `exit(message, logger)` is now
+`fail(error, onError?)`, and `exitOrWarn(...)` is now `failOrWarn(...)` and returns a boolean.
+
+**Packaging.** The package now ships ESM alongside CommonJS via an `exports` map, and declares
+`engines.node >= 22`. Deep imports into `dist/**` are no longer resolvable -- import from the
+package root.
