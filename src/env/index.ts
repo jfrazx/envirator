@@ -84,7 +84,10 @@ export class Envirator {
 
     const env = (process.env[nodeEnv] || this.options.defaultEnv).toLowerCase();
     const usePath = this.determine.configFilePath(env, path || config.path);
-    const envResult = dotenv.config({ ...config, path: usePath });
+    // dotenv >= 17 announces every successful load on stdout, which bypasses the
+    // configured logger and the warning controls entirely. Quiet by default, but
+    // let a caller opt back in through `config`.
+    const envResult = dotenv.config({ quiet: true, ...config, path: usePath });
 
     if (envResult.error) {
       this.fail(new EnvironmentConfigError(usePath, envResult.error), onError);

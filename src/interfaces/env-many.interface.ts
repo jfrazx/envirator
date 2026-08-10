@@ -6,7 +6,12 @@ export interface EnvManyResult<T = any> {
   [key: string]: T;
 }
 
-export interface EnvManyOptions extends EnvOptions {
+/**
+ * `onError` is omitted deliberately. provideMany collects every missing key and
+ * raises a single aggregate error, so a per-entry failure policy could never be
+ * honoured. Supply `onError` when constructing Envirator, or catch the error.
+ */
+export interface EnvManyOptions extends Omit<EnvOptions, 'onError'> {
   /**
    * @description An environment variable
    */

@@ -8,7 +8,7 @@
 Ensure environment variable availability during program initialization.
 
 Ships both CommonJS and ES module builds with TypeScript declarations for each.
-Requires Node 20 or later.
+Requires Node 22 or later.
 
 ---
 
@@ -132,7 +132,7 @@ Be aware that values will be lower-cased.
 | Option             | Type                                                            | Default Value             | Description                                                                                                 |
 | ------------------ | --------------------------------------------------------------- | ------------------------- | ----------------------------------------------------------------------------------------------------------- |
 | nodeEnv            | string                                                          | NODE_ENV                  | Change where to locate the Node environment.                                                                |
-| logger             | EnvLogger                                                       | console                   | Prints warning and error messages to the terminal.                                                          |
+| logger             | EnvLogger                                                       | console                   | Prints warning messages to the terminal. Failures are thrown, not logged.                                   |
 | environments       | Environments                                                    | { [key: string]: string } | An object that allows overriding of `production`, `development`, `test` and `staging` strings               |
 | defaultEnv         | string                                                          | development               | Designate the default environment. This should be a key from the `environments` option.                     |
 | noDefaultEnv       | boolean                                                         | false                     | Specify if you do not want to provide a default environment if one is not set.                              |
@@ -479,5 +479,5 @@ new Envirator({ environments: { staging: 'staged' }, camelcase: true });
 `fail(error, onError?)`, and `exitOrWarn(...)` is now `failOrWarn(...)` and returns a boolean.
 
 **Packaging.** The package now ships ESM alongside CommonJS via an `exports` map, and declares
-`engines.node >= 20`. Deep imports into `dist/**` are no longer resolvable -- import from the
+`engines.node >= 22`. Deep imports into `dist/**` are no longer resolvable -- import from the
 package root.

@@ -82,6 +82,34 @@ describe('LoadConfig', () => {
     expect(empty).to.equal('');
   });
 
+  it('should not write to stdout when loading a config', () => {
+    const write = sinon.stub(process.stdout, 'write').returns(true);
+    const env = new Envirator();
+
+    try {
+      env.load(join(__dirname, '.env.development'));
+    } finally {
+      write.restore();
+    }
+
+    sinon.assert.notCalled(write);
+  });
+
+  it('should allow the caller to re-enable dotenv output', () => {
+    const write = sinon.stub(process.stdout, 'write').returns(true);
+    const env = new Envirator();
+
+    try {
+      env.load(join(__dirname, '.env.development'), {
+        config: { quiet: false },
+      });
+    } finally {
+      write.restore();
+    }
+
+    sinon.assert.called(write);
+  });
+
   it('should throw if config loading fails', () => {
     const envirator = new Envirator();
 

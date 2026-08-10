@@ -9,7 +9,7 @@ export type EnvErrorHandler = (error: EnviratorError) => void;
 
 interface EnvSharedOptions {
   /**
-   * @description Prints warning and error messages to the terminal
+   * @description Prints warning messages to the terminal. Failures are thrown, not logged.
    * @default console
    */
   logger?: EnvLogger;
@@ -95,7 +95,7 @@ export interface EnvConfigOptions {
   noDefaultEnv?: boolean;
 
   /**
-   * @description Prints warning and error messages to the terminal
+   * @description Prints warning messages to the terminal. Failures are thrown, not logged.
    * @default console
    */
   logger?: EnvLogger;
