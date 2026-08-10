@@ -11,8 +11,18 @@ jobs:
   release:
     runs-on: ubuntu-latest
 
-    # `completed` fires for failed runs too -- only release when Tests actually passed
-    if: github.event.workflow_run.conclusion == 'success'
+    # workflow_run runs with repository secrets and a write token even when the
+    # run that triggered it did not have them, and the checkout below is of the
+    # triggering commit. The trigger-level `branches` filter above matches the
+    # head branch, so it already excludes ordinary pull requests -- but a fork's
+    # default branch is also named master. Hence:
+    #   conclusion      -- `completed` fires for failed runs too
+    #   event           -- Tests also runs on pull_request, including from forks
+    #   head_repository -- and that fork's branch may well be named master
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
 
     permissions:
       contents: write
