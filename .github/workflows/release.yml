@@ -7,10 +7,15 @@ on:
     types:
       - completed
 
+# Declared at the workflow level, matching the other packages. A job-level
+# block would replace this one wholesale rather than merging with it, so a
+# job that redeclared any scope would silently lose id-token and with it
+# npm trusted publishing.
 permissions:
-  packages: write
   contents: write
   id-token: write
+  issues: write
+  pull-requests: write
 
 jobs:
   release:
@@ -28,11 +33,6 @@ jobs:
       github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.event == 'push' &&
       github.event.workflow_run.head_repository.full_name == github.repository
-
-    permissions:
-      contents: write
-      issues: write
-      pull-requests: write
 
     steps:
       - name: Checkout
@@ -55,7 +55,10 @@ jobs:
       - name: Build
         run: npm run build
 
+      # Branches and plugins come from .releaserc so the plugin order is the
+      # documented one -- passing -p on the CLI ran the GitHub release before
+      # notes were generated.
       - name: Release
-        run: npx semantic-release -b master -p @semantic-release/commit-analyzer -p @semantic-release/github -p @semantic-release/release-notes-generator -p @semantic-release/npm
+        run: npx semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}

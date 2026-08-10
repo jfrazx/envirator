@@ -8,9 +8,12 @@
     "envars",
     "envirator",
     "mutators",
+    "nyc",
+    "oidc",
     "picocolors",
     "pino",
     "publint",
+    "releaserc",
     "tseslint",
     "tsup"
   ],
