@@ -1,8 +1,8 @@
-export const enum Default {
+export enum Default {
   NodeEnv = 'NODE_ENV',
 }
 
-export const enum Level {
+export enum Level {
   Error = 'ERROR',
   Warn = 'WARN',
 }

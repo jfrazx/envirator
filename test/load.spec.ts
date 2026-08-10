@@ -1,8 +1,7 @@
-import { Envirator } from '../src';
+import { Envirator, EnvironmentConfigError } from '../src';
 import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { join } from 'path';
-import chalk from 'chalk';
 
 describe('LoadConfig', () => {
   let originalEnv: any;
@@ -83,44 +82,43 @@ describe('LoadConfig', () => {
     expect(empty).to.equal('');
   });
 
-  it('should exit if config loading fails', () => {
-    const error = console.error as sinon.SinonStub;
-
+  it('should throw if config loading fails', () => {
     const envirator = new Envirator();
 
-    envirator.load('config.fail', {
-      logger: console,
-    });
-
-    sinon.assert.called(error);
-    sinon.assert.calledWith(
-      error,
-      chalk.red(
-        `[ENV ERROR] failed to load 'config.fail': Error: ENOENT: no such file or directory, open 'config.fail'`
-      )
+    expect(() => envirator.load('config.fail')).to.throw(
+      EnvironmentConfigError,
+      `Failed to load environment config 'config.fail': Error: ENOENT: no such file or directory, open 'config.fail'`
     );
-    sinon.assert.called(process.exit as any);
-    sinon.assert.calledWith(process.exit as any, 1);
+
+    sinon.assert.notCalled(process.exit as any);
+    sinon.assert.notCalled(console.error as sinon.SinonStub);
   });
 
-  it('should exit when loading and noDefaultEnv is set', () => {
-    const error = console.error as sinon.SinonStub;
+  it('should expose the path and cause on the thrown error', () => {
+    const envirator = new Envirator();
+
+    try {
+      envirator.load('config.fail');
+      expect.fail('expected load to throw');
+    } catch (error) {
+      expect(error).to.be.instanceOf(EnvironmentConfigError);
+      expect((error as EnvironmentConfigError).path).to.equal('config.fail');
+      expect((error as EnvironmentConfigError).cause).to.be.instanceOf(Error);
+    }
+  });
+
+  it('should throw when loading and noDefaultEnv is set', () => {
     const env = new Envirator({
       noDefaultEnv: true,
       logger: {
         warn: () => {},
-        error,
+        error: console.error,
       },
     });
 
-    env.load();
-
-    sinon.assert.called(error);
-    sinon.assert.calledWith(
-      error,
-      chalk.red(
-        `[ENV ERROR] failed to load '.env': Error: ENOENT: no such file or directory, open '.env'`
-      )
+    expect(() => env.load()).to.throw(
+      EnvironmentConfigError,
+      `Failed to load environment config '.env': Error: ENOENT: no such file or directory, open '.env'`
     );
   });
 });

@@ -92,7 +92,7 @@ export class Determinative {
   }
 
   configFilePath(env: string, path: string | undefined): string {
-    return isUndefined(path) ? `.env${env ? '.' : env}${env}` : path;
+    return isUndefined(path) ? (env ? `.env.${env}` : '.env') : path;
   }
 
   shouldWarn(key: string, suppressWarnings: WarningSuppressor): boolean {
@@ -101,8 +101,8 @@ export class Determinative {
       Array.isArray(value)
         ? value.includes(this.env.currentEnv)
         : isFunction(value)
-        ? value(key, this.env)
-        : value
+          ? value(key, this.env)
+          : value
     );
 
     return !suppress;

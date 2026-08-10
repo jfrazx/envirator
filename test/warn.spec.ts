@@ -1,7 +1,7 @@
-import { Env, Environment } from '../src';
+import { Env, Environment, MissingEnvironmentError } from '../src';
 import * as sinon from 'sinon';
 import { expect } from 'chai';
-import chalk from 'chalk';
+import pc from 'picocolors';
 import pino from 'pino';
 
 const logger = pino();
@@ -39,7 +39,7 @@ describe('DoNotWarn', () => {
     sinon.assert.calledOnce(logger.warn as any);
     sinon.assert.calledWith(
       logger.warn as any,
-      chalk.yellow(`[ENV WARN]: Missing environment variable 'I_DONT_EXIST'`)
+      pc.yellow(`[ENV WARN]: Missing environment variable 'I_DONT_EXIST'`)
     );
     sinon.assert.notCalled(process.exit as any);
   });
@@ -53,17 +53,14 @@ describe('DoNotWarn', () => {
 
     env.currentEnv = Environment.Development;
 
-    const undef = env.provide('I_DONT_EXIST');
-
-    expect(undef).to.be.undefined;
-
-    sinon.assert.calledOnce(logger.error as any);
-    sinon.assert.calledWith(
-      logger.error as any,
-      chalk.red(`[ENV ERROR]: Missing environment variable 'I_DONT_EXIST'`)
+    expect(() => env.provide('I_DONT_EXIST')).to.throw(
+      MissingEnvironmentError,
+      `Missing environment variable: 'I_DONT_EXIST'`
     );
-    sinon.assert.called(process.exit as any);
-    sinon.assert.calledWith(process.exit as any, 1);
+
+    sinon.assert.notCalled(logger.error as any);
+    sinon.assert.notCalled(logger.warn as any);
+    sinon.assert.notCalled(process.exit as any);
   });
 
   it('should warn in production', () => {
@@ -82,7 +79,7 @@ describe('DoNotWarn', () => {
     sinon.assert.calledOnce(logger.warn as any);
     sinon.assert.calledWith(
       logger.warn as any,
-      chalk.yellow(`[ENV WARN]: Missing environment variable 'I_DONT_EXIST'`)
+      pc.yellow(`[ENV WARN]: Missing environment variable 'I_DONT_EXIST'`)
     );
     sinon.assert.notCalled(process.exit as any);
   });
@@ -95,17 +92,14 @@ describe('DoNotWarn', () => {
 
     env.currentEnv = Environment.Production;
 
-    const undef = env.provide('I_DONT_EXIST');
-
-    expect(undef).to.be.undefined;
-
-    sinon.assert.calledOnce(logger.error as any);
-    sinon.assert.calledWith(
-      logger.error as any,
-      chalk.red(`[ENV ERROR]: Missing environment variable 'I_DONT_EXIST'`)
+    expect(() => env.provide('I_DONT_EXIST')).to.throw(
+      MissingEnvironmentError,
+      `Missing environment variable: 'I_DONT_EXIST'`
     );
-    sinon.assert.called(process.exit as any);
-    sinon.assert.calledWith(process.exit as any, 1);
+
+    sinon.assert.notCalled(logger.error as any);
+    sinon.assert.notCalled(logger.warn as any);
+    sinon.assert.notCalled(process.exit as any);
   });
 
   it('should warn in test', () => {
@@ -123,7 +117,7 @@ describe('DoNotWarn', () => {
     sinon.assert.calledOnce(logger.warn as any);
     sinon.assert.calledWith(
       logger.warn as any,
-      chalk.yellow(`[ENV WARN]: Missing environment variable 'I_DONT_EXIST'`)
+      pc.yellow(`[ENV WARN]: Missing environment variable 'I_DONT_EXIST'`)
     );
     sinon.assert.notCalled(process.exit as any);
   });
@@ -137,17 +131,14 @@ describe('DoNotWarn', () => {
 
     env.currentEnv = Environment.Test;
 
-    const undef = env.provide('I_DONT_EXIST');
-
-    expect(undef).to.be.undefined;
-
-    sinon.assert.calledOnce(logger.error as any);
-    sinon.assert.calledWith(
-      logger.error as any,
-      chalk.red(`[ENV ERROR]: Missing environment variable 'I_DONT_EXIST'`)
+    expect(() => env.provide('I_DONT_EXIST')).to.throw(
+      MissingEnvironmentError,
+      `Missing environment variable: 'I_DONT_EXIST'`
     );
-    sinon.assert.called(process.exit as any);
-    sinon.assert.calledWith(process.exit as any, 1);
+
+    sinon.assert.notCalled(logger.error as any);
+    sinon.assert.notCalled(logger.warn as any);
+    sinon.assert.notCalled(process.exit as any);
   });
 
   it('should warn in staging', () => {
@@ -165,7 +156,7 @@ describe('DoNotWarn', () => {
     sinon.assert.calledOnce(logger.warn as any);
     sinon.assert.calledWith(
       logger.warn as any,
-      chalk.yellow(`[ENV WARN]: Missing environment variable 'I_DONT_EXIST'`)
+      pc.yellow(`[ENV WARN]: Missing environment variable 'I_DONT_EXIST'`)
     );
     sinon.assert.notCalled(process.exit as any);
   });
@@ -179,17 +170,14 @@ describe('DoNotWarn', () => {
 
     env.currentEnv = Environment.Staging;
 
-    const undef = env.provide('I_DONT_EXIST');
-
-    expect(undef).to.be.undefined;
-
-    sinon.assert.calledOnce(logger.error as any);
-    sinon.assert.calledWith(
-      logger.error as any,
-      chalk.red(`[ENV ERROR]: Missing environment variable 'I_DONT_EXIST'`)
+    expect(() => env.provide('I_DONT_EXIST')).to.throw(
+      MissingEnvironmentError,
+      `Missing environment variable: 'I_DONT_EXIST'`
     );
-    sinon.assert.called(process.exit as any);
-    sinon.assert.calledWith(process.exit as any, 1);
+
+    sinon.assert.notCalled(logger.error as any);
+    sinon.assert.notCalled(logger.warn as any);
+    sinon.assert.notCalled(process.exit as any);
   });
 
   it('should not warn in any default environment', () => {
@@ -209,22 +197,23 @@ describe('DoNotWarn', () => {
     envs.forEach((environment) => {
       env.currentEnv = environment;
       const envVar = `I_DONT_EXIST_${environment.toUpperCase()}`;
-      const errorMessage = `[ENV ERROR]: Missing environment variable '${envVar}'`;
-      const provided = env.provide(envVar);
 
-      expect(provided).to.be.undefined;
-      sinon.assert.calledWith(logger.error as any, chalk.red(errorMessage));
-
-      sinon.assert.called(process.exit as any);
-      sinon.assert.calledWith(process.exit as any, 1);
+      expect(() => env.provide(envVar)).to.throw(
+        MissingEnvironmentError,
+        `Missing environment variable: '${envVar}'`
+      );
     });
+
+    sinon.assert.notCalled(logger.error as any);
+    sinon.assert.notCalled(logger.warn as any);
+    sinon.assert.notCalled(process.exit as any);
   });
 
   it('should warn in custom environments', () => {
     const env = new Env({
       warnOnly: true,
       logger,
-      envs: {
+      environments: {
         custom: 'custom',
       },
     });
@@ -238,7 +227,7 @@ describe('DoNotWarn', () => {
     sinon.assert.calledOnce(logger.warn as any);
     sinon.assert.calledWith(
       logger.warn as any,
-      chalk.yellow(
+      pc.yellow(
         `[ENV WARN]: Missing environment variable 'I_DONT_EXIST_CUSTOM'`
       )
     );
@@ -254,19 +243,14 @@ describe('DoNotWarn', () => {
 
     env.currentEnv = 'custom';
 
-    const undef = env.provide('I_DONT_EXIST_CUSTOM_FAIL');
-
-    expect(undef).to.be.undefined;
-
-    sinon.assert.calledOnce(logger.error as any);
-    sinon.assert.calledWith(
-      logger.error as any,
-      chalk.red(
-        `[ENV ERROR]: Missing environment variable 'I_DONT_EXIST_CUSTOM_FAIL'`
-      )
+    expect(() => env.provide('I_DONT_EXIST_CUSTOM_FAIL')).to.throw(
+      MissingEnvironmentError,
+      `Missing environment variable: 'I_DONT_EXIST_CUSTOM_FAIL'`
     );
-    sinon.assert.called(process.exit as any);
-    sinon.assert.calledWith(process.exit as any, 1);
+
+    sinon.assert.notCalled(logger.error as any);
+    sinon.assert.notCalled(logger.warn as any);
+    sinon.assert.notCalled(process.exit as any);
   });
 
   it('should not warn in modified built-in environments', () => {
@@ -279,7 +263,7 @@ describe('DoNotWarn', () => {
 
     const env = new Env({
       doNotWarnIn,
-      envs: {
+      environments: {
         test,
         staging,
         production,
@@ -290,19 +274,17 @@ describe('DoNotWarn', () => {
 
     doNotWarnIn.forEach((environment) => {
       const envVar = `DOES_NOT_EXIST_${environment.toUpperCase()}`;
-      const errorMessage = `[ENV ERROR]: Missing environment variable '${envVar}'`;
 
       env.currentEnv = environment;
 
-      const provided = env.provide(envVar);
-
-      expect(provided).to.be.undefined;
-
-      sinon.assert.called(logger.error as any);
-      sinon.assert.calledWith(logger.error as any, chalk.red(errorMessage));
-
-      sinon.assert.called(process.exit as any);
-      sinon.assert.calledWith(process.exit as any, 1);
+      expect(() => env.provide(envVar)).to.throw(
+        MissingEnvironmentError,
+        `Missing environment variable: '${envVar}'`
+      );
     });
+
+    sinon.assert.notCalled(logger.error as any);
+    sinon.assert.notCalled(logger.warn as any);
+    sinon.assert.notCalled(process.exit as any);
   });
 });

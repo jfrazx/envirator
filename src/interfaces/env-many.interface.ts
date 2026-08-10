@@ -19,11 +19,6 @@ export interface EnvManyOptions extends EnvOptions {
   camelcase?: boolean;
 
   /**
-   * @deprecated Use camelcase
-   */
-  keyToJsProp?: boolean;
-
-  /**
    * @description A string, function or array of functions to transform an environment variable name into an object property
    */
   keyTo?: string | KeyTo | KeyTo[];

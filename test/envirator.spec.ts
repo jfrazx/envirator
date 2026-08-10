@@ -1,8 +1,14 @@
-import { Env, Envirator, EnvManyResult, EnvManyOptions } from '../src';
+import {
+  Env,
+  Envirator,
+  EnvManyResult,
+  EnvManyOptions,
+  MissingEnvironmentError,
+} from '../src';
 import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { join } from 'path';
-import chalk from 'chalk';
+import pc from 'picocolors';
 
 describe('Envirator', () => {
   let originalEnv: any;
@@ -32,27 +38,23 @@ describe('Envirator', () => {
   });
 
   describe('Behavior', () => {
-    describe('Exit', () => {
-      it('should exit when noDefaultEnv is set to true', () => {
+    describe('Fail', () => {
+      it('should throw when noDefaultEnv is set to true', () => {
         const env = new Envirator({
           noDefaultEnv: true,
           warnOnly: true,
           logger: console,
         });
 
-        const currentEnv = env.currentEnv;
-
-        expect(currentEnv).to.be.undefined;
-        sinon.assert.called(console.error as any);
-        sinon.assert.calledWith(
-          console.error as any,
-          chalk.red(`[ENV ERROR]: Missing environment variable 'NODE_ENV'`)
+        expect(() => env.currentEnv).to.throw(
+          MissingEnvironmentError,
+          `Missing environment variable: 'NODE_ENV'`
         );
-        sinon.assert.called(process.exit as any);
-        sinon.assert.calledWith(process.exit as any, 1);
+
+        sinon.assert.notCalled(process.exit as any);
       });
 
-      it('should exit when noDefaultEnv is set to true and nodeEnv is empty string', () => {
+      it('should throw when noDefaultEnv is set to true and nodeEnv is empty string', () => {
         const env = new Envirator({
           noDefaultEnv: true,
           warnOnly: true,
@@ -61,19 +63,15 @@ describe('Envirator', () => {
 
         env.setEnv('NODE_ENV', '');
 
-        const currentEnv = env.currentEnv;
-
-        expect(currentEnv).to.be.undefined;
-        sinon.assert.called(console.error as any);
-        sinon.assert.calledWith(
-          console.error as any,
-          chalk.red(`[ENV ERROR]: Missing environment variable 'NODE_ENV'`)
+        expect(() => env.currentEnv).to.throw(
+          MissingEnvironmentError,
+          `Missing environment variable: 'NODE_ENV'`
         );
-        sinon.assert.called(process.exit as any);
-        sinon.assert.calledWith(process.exit as any, 1);
+
+        sinon.assert.notCalled(process.exit as any);
       });
 
-      it('should exit when allowEmptyString is set to false during initialization', () => {
+      it('should throw when allowEmptyString is set to false during initialization', () => {
         const env = new Envirator({
           allowEmptyString: false,
           logger: console,
@@ -81,59 +79,114 @@ describe('Envirator', () => {
 
         env.setEnv('EMPTY', '');
 
-        const empty = env.provide('EMPTY');
-
-        expect(empty).to.be.undefined;
-
-        sinon.assert.called(console.error as any);
-        sinon.assert.calledWith(
-          console.error as any,
-          chalk.red(`[ENV ERROR]: Missing environment variable 'EMPTY'`)
+        expect(() => env.provide('EMPTY')).to.throw(
+          MissingEnvironmentError,
+          `Missing environment variable: 'EMPTY'`
         );
-        sinon.assert.called(process.exit as any);
-        sinon.assert.calledWith(process.exit as any, 1);
+
+        sinon.assert.notCalled(process.exit as any);
       });
 
-      it('should exit when allowEmptyString is set to false during provide', () => {
+      it('should throw when allowEmptyString is set to false during provide', () => {
         const env = new Envirator({
           logger: console,
         });
 
         env.setEnv('EMPTY', '     ');
 
-        const empty = env.provide('EMPTY', { allowEmptyString: false });
-
-        expect(empty).to.be.undefined;
-
-        sinon.assert.called(console.error as any);
-        sinon.assert.calledWith(
-          console.error as any,
-          chalk.red(`[ENV ERROR]: Missing environment variable 'EMPTY'`)
+        expect(() =>
+          env.provide('EMPTY', { allowEmptyString: false })
+        ).to.throw(
+          MissingEnvironmentError,
+          `Missing environment variable: 'EMPTY'`
         );
-        sinon.assert.called(process.exit as any);
-        sinon.assert.calledWith(process.exit as any, 1);
+
+        sinon.assert.notCalled(process.exit as any);
       });
 
-      it('should exit when allowEmptyString is set to false during provide with no envVar', () => {
+      it('should throw when allowEmptyString is set to false during provide with no envVar', () => {
         const env = new Envirator({
           allowEmptyString: false,
           logger: console,
         });
 
-        const empty = env.provide('EMPTY', { allowEmptyString: false });
-
-        expect(empty).to.be.undefined;
-
-        sinon.assert.called(console.error as any);
-        sinon.assert.calledWith(
-          console.error as any,
-          chalk.red(`[ENV ERROR]: Missing environment variable 'EMPTY'`)
+        expect(() =>
+          env.provide('EMPTY', { allowEmptyString: false })
+        ).to.throw(
+          MissingEnvironmentError,
+          `Missing environment variable: 'EMPTY'`
         );
-        sinon.assert.called(process.exit as any);
-        sinon.assert.calledWith(process.exit as any, 1);
+
+        sinon.assert.notCalled(process.exit as any);
       });
 
-      it('should NOT exit when allowEmptyString is set to false during initialization, but true with provide', () => {
+      it('should carry the missing keys on the thrown error', () => {
+        const env = new Envirator({ logger: console });
+
+        try {
+          env.provide('ABSENT');
+          expect.fail('expected provide to throw');
+        } catch (error) {
+          expect(error).to.be.instanceOf(MissingEnvironmentError);
+          expect((error as MissingEnvironmentError).keys).to.deep.equal([
+            'ABSENT',
+          ]);
+        }
+      });
+
+      it('should not log when it throws', () => {
+        const env = new Envirator({ logger: console });
+
+        expect(() => env.provide('ABSENT')).to.throw(MissingEnvironmentError);
+
+        sinon.assert.notCalled(console.error as any);
+        sinon.assert.notCalled(console.warn as any);
+      });
+
+      it('should hand the error to onError before throwing', () => {
+        const onError = sinon.stub();
+        const env = new Envirator({ logger: console, onError });
+
+        expect(() => env.provide('ABSENT')).to.throw(MissingEnvironmentError);
+
+        sinon.assert.calledOnce(onError);
+        expect(onError.firstCall.args[0]).to.be.instanceOf(
+          MissingEnvironmentError
+        );
+      });
+
+      it('should allow onError to supply the failure policy', () => {
+        const env = new Envirator({
+          logger: console,
+          onError: (error) => {
+            console.error(error.message);
+            process.exit(1);
+          },
+        });
+
+        // process.exit is stubbed here, so the handler returns and the error
+        // still throws. In a real process the exit would have already happened.
+        expect(() => env.provide('ABSENT')).to.throw(MissingEnvironmentError);
+
+        sinon.assert.calledWith(process.exit as any, 1);
+        sinon.assert.calledWith(
+          console.error as any,
+          `Missing environment variable: 'ABSENT'`
+        );
+      });
+
+      it('should accept onError as a provide option', () => {
+        const onError = sinon.stub();
+        const env = new Envirator({ logger: console });
+
+        expect(() => env.provide('ABSENT', { onError })).to.throw(
+          MissingEnvironmentError
+        );
+
+        sinon.assert.calledOnce(onError);
+      });
+
+      it('should NOT throw when allowEmptyString is set to false during initialization, but true with provide', () => {
         const env = new Envirator({
           allowEmptyString: false,
           logger: console,
@@ -163,9 +216,7 @@ describe('Envirator', () => {
         sinon.assert.called(warn);
         sinon.assert.calledWith(
           warn,
-          chalk.yellow(
-            `[ENV WARN]: Missing environment variable 'SOME_ENV_VAR'`
-          )
+          pc.yellow(`[ENV WARN]: Missing environment variable 'SOME_ENV_VAR'`)
         );
       });
 
@@ -185,7 +236,7 @@ describe('Envirator', () => {
         sinon.assert.called(console.warn as any);
         sinon.assert.calledWith(
           console.warn as any,
-          chalk.yellow(`[ENV WARN]: Missing environment variable 'EMPTY'`)
+          pc.yellow(`[ENV WARN]: Missing environment variable 'EMPTY'`)
         );
         sinon.assert.notCalled(process.exit as any);
       });
@@ -205,7 +256,7 @@ describe('Envirator', () => {
         sinon.assert.called(console.warn as any);
         sinon.assert.calledWith(
           console.warn as any,
-          chalk.yellow(`[ENV WARN]: Missing environment variable 'EMPTY'`)
+          pc.yellow(`[ENV WARN]: Missing environment variable 'EMPTY'`)
         );
         sinon.assert.notCalled(process.exit as any);
       });
@@ -348,15 +399,12 @@ describe('Envirator', () => {
     it('should accept an alternate logger when instantiating', () => {
       const envirator = new Envirator({ logger: console });
 
-      expect(envirator.provide('NODE_ENVZ')).to.be.undefined;
-
-      sinon.assert.called(process.exit as any);
-      sinon.assert.called(console.error as any);
-      sinon.assert.calledWith(process.exit as any, 1);
-      sinon.assert.calledWith(
-        console.error as any,
-        chalk.red(`[ENV ERROR]: Missing environment variable 'NODE_ENVZ'`)
+      expect(() => envirator.provide('NODE_ENVZ')).to.throw(
+        MissingEnvironmentError,
+        `Missing environment variable: 'NODE_ENVZ'`
       );
+
+      sinon.assert.notCalled(process.exit as any);
     });
 
     it('should override instantiated values', () => {
@@ -367,19 +415,15 @@ describe('Envirator', () => {
       sinon.assert.called(console.warn as any);
       sinon.assert.calledWith(
         console.warn as any,
-        chalk.yellow(`[ENV WARN]: Missing environment variable 'WAT'`)
+        pc.yellow(`[ENV WARN]: Missing environment variable 'WAT'`)
       );
 
-      expect(envirator.provide('WAT', { warnOnly: false })).be.undefined;
-
-      sinon.assert.called(console.error as any);
-      sinon.assert.calledWith(
-        console.error as any,
-        chalk.red(`[ENV ERROR]: Missing environment variable 'WAT'`)
+      expect(() => envirator.provide('WAT', { warnOnly: false })).to.throw(
+        MissingEnvironmentError,
+        `Missing environment variable: 'WAT'`
       );
 
-      sinon.assert.called(process.exit as any);
-      sinon.assert.calledWith(process.exit as any, 1);
+      sinon.assert.notCalled(process.exit as any);
     });
 
     it('should supply the current environment', () => {
@@ -405,7 +449,7 @@ describe('Envirator', () => {
     it('should override the default env with a defined env and provide as the current environment', () => {
       const env = new Envirator({
         defaultEnv: 'something',
-        envs: {
+        environments: {
           something: 'things',
         },
       });
@@ -494,12 +538,13 @@ describe('Envirator', () => {
 
       envirator.setEnv('NODE_ENV', 'production');
 
-      expect(envirator.provide('SOME_VAR')).to.be.undefined;
+      expect(() => envirator.provide('SOME_VAR')).to.throw(
+        MissingEnvironmentError,
+        `Missing environment variable: 'SOME_VAR'`
+      );
 
       sinon.assert.notCalled(console.warn as any);
-      sinon.assert.called(console.error as any);
-      sinon.assert.called(process.exit as any);
-      sinon.assert.calledWith(process.exit as any, 1);
+      sinon.assert.notCalled(process.exit as any);
     });
 
     it('should allow production defaults when initialized', () => {
@@ -524,11 +569,11 @@ describe('Envirator', () => {
 
       envirator.setEnv('NODE_ENV', 'production');
 
-      expect(
+      expect(() =>
         envirator.provide('SOME_VAR', {
           defaultValue: 'someValue',
         })
-      ).to.be.undefined;
+      ).to.throw(MissingEnvironmentError);
 
       expect(
         envirator.provide('SOME_VAR', {
@@ -563,17 +608,16 @@ describe('Envirator', () => {
 
       envirator.setEnv('NODE_ENV', 'production');
 
-      expect(envirator.provide('SOME_VAR', { defaultValue: 'someValue' })).to.be
-        .undefined;
+      expect(() =>
+        envirator.provide('SOME_VAR', { defaultValue: 'someValue' })
+      ).to.throw(MissingEnvironmentError);
 
-      sinon.assert.called(console.error as any);
-      sinon.assert.called(process.exit as any);
-      sinon.assert.calledWith(process.exit as any, 1);
+      sinon.assert.notCalled(process.exit as any);
     });
 
     it('should provide environment based defaults', () => {
       const env = new Envirator({
-        envs: { staging: 'staged', customEnv: 'custom' },
+        environments: { staging: 'staged', customEnv: 'custom' },
         logger: console,
       });
 
@@ -608,15 +652,15 @@ describe('Envirator', () => {
 
       env.currentEnv = 'none';
 
-      const noneVar = env.provide('FORT', options);
-      expect(noneVar).to.be.undefined;
-
-      sinon.assert.called(console.error as any);
+      expect(() => env.provide('FORT', options)).to.throw(
+        MissingEnvironmentError,
+        `Missing environment variable: 'FORT'`
+      );
     });
 
     it('should provide environment based defaults and a default value when environment does not exist', () => {
       const env = new Envirator({
-        envs: { staging: 'staged', customEnv: 'custom' },
+        environments: { staging: 'staged', customEnv: 'custom' },
         logger: console,
       });
 
@@ -689,14 +733,14 @@ describe('Envirator', () => {
           warn: () => {},
           error: console.error,
         },
-        keyToJsProp: true,
+        camelcase: true,
       });
 
       env.setEnv('NODE_ENV', 'development');
       const opt: EnvManyOptions = {
         key: 'NODE_ENV',
         defaultValue: 'development',
-        keyToJsProp: false,
+        camelcase: false,
       };
       const options = [
         opt,
@@ -704,7 +748,7 @@ describe('Envirator', () => {
         { key: 'UNKNOWN-VAR', defaultValue: 'unknown' },
         { key: 'UNKNOWN-VAR_CHAR', defaultValue: 'meh' },
         { key: 'keyvar', defaultValue: 'content' },
-        { key: 'keyCar', defaultValue: 'con-tent', keyToJsProp: false },
+        { key: 'keyCar', defaultValue: 'con-tent', camelcase: false },
       ];
 
       const envars = env.provideMany(options);
@@ -725,7 +769,7 @@ describe('Envirator', () => {
     });
 
     it('should provide many with key overrides', () => {
-      const env = new Env({ keyToJsProp: true });
+      const env = new Env({ camelcase: true });
 
       const envars = env.provideMany([
         { key: 'TOKEN_SECKRET', keyTo: () => 'secret', defaultValue: 'token' },
@@ -750,7 +794,7 @@ describe('Envirator', () => {
     });
 
     it('should provide many and alter the shape of the final object', () => {
-      const env = new Env({ keyToJsProp: true });
+      const env = new Env({ camelcase: true });
 
       interface JwtOptions {
         secret: string;
@@ -795,6 +839,54 @@ describe('Envirator', () => {
       expect(jwtOptions.signOptions).to.be.an('object');
       expect(jwtOptions.signOptions.algorithm).to.equal('RSA');
       expect(jwtOptions.signOptions.issuer).to.equal('something');
+    });
+
+    it('should report every missing variable in a single error', () => {
+      const env = new Envirator({ logger: console });
+
+      env.setEnv('PRESENT', 'here');
+
+      try {
+        env.provideMany(['MISSING_ONE', 'PRESENT', 'MISSING_TWO']);
+        expect.fail('expected provideMany to throw');
+      } catch (error) {
+        expect(error).to.be.instanceOf(MissingEnvironmentError);
+        expect((error as MissingEnvironmentError).keys).to.deep.equal([
+          'MISSING_ONE',
+          'MISSING_TWO',
+        ]);
+        expect((error as MissingEnvironmentError).message).to.equal(
+          `Missing environment variables: 'MISSING_ONE', 'MISSING_TWO'`
+        );
+      }
+
+      sinon.assert.notCalled(process.exit as any);
+    });
+
+    it('should hand the aggregated error to onError once', () => {
+      const onError = sinon.stub();
+      const env = new Envirator({ logger: console, onError });
+
+      expect(() => env.provideMany(['NOPE_ONE', 'NOPE_TWO'])).to.throw(
+        MissingEnvironmentError
+      );
+
+      sinon.assert.calledOnce(onError);
+      expect(onError.firstCall.args[0].keys).to.deep.equal([
+        'NOPE_ONE',
+        'NOPE_TWO',
+      ]);
+    });
+
+    it('should still warn rather than aggregate when warnOnly is set', () => {
+      const env = new Envirator({ warnOnly: true, logger: console });
+
+      const envars = env.provideMany(['ABSENT_ONE', 'ABSENT_TWO']);
+
+      expect(envars.ABSENT_ONE).to.be.undefined;
+      expect(envars.ABSENT_TWO).to.be.undefined;
+
+      sinon.assert.calledTwice(console.warn as any);
     });
   });
 });

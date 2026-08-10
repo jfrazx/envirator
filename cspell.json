@@ -3,12 +3,16 @@
   "language": "en",
   "words": [
     "camelcase",
-    "codecov",
+    "dotenv",
     "envar",
     "envars",
     "envirator",
     "mutators",
-    "pino"
+    "picocolors",
+    "pino",
+    "publint",
+    "tseslint",
+    "tsup"
   ],
   "ignoreRegExpList": [
     "/from '[a-zA-Z]'/",

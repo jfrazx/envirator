@@ -1,9 +1,11 @@
 import { Environments } from './env-environments.interface';
 import { EnvLogger } from './env-logger.interface';
+import { EnviratorError } from '../errors';
 import { Envirator } from '../env/index';
 
 export type EnvMutator<T = any, R = any> = (value: T) => R;
 export type EnvWarningSuppression = (key: string, env: Envirator) => boolean;
+export type EnvErrorHandler = (error: EnviratorError) => void;
 
 interface EnvSharedOptions {
   /**
@@ -36,6 +38,21 @@ interface EnvSharedOptions {
    *  @default false
    */
   suppressWarnings?: WarningSuppressor;
+
+  /**
+   * @description Supplies the failure policy. Receives the error before it is thrown, which
+   *    allows an application to log, aggregate or terminate as it sees fit. If the handler
+   *    returns, the error is thrown.
+   * @default undefined
+   * @example
+   *    createEnv({
+   *      onError: (error) => {
+   *        console.error(error.message);
+   *        process.exit(1);
+   *      },
+   *    });
+   */
+  onError?: EnvErrorHandler;
 }
 
 export interface EnvOptions extends EnvSharedOptions {
@@ -88,24 +105,20 @@ export interface EnvConfigOptions {
    * @default NODE_ENV
    */
   nodeEnv?: string;
+
+  /**
+   * @description Supplies the failure policy. Receives the error before it is thrown.
+   * @default undefined
+   */
+  onError?: EnvErrorHandler;
 }
 
 export interface EnvInitOptions extends EnvSharedOptions, EnvConfigOptions {
-  /**
-   * @deprecated Use environments
-   */
-  envs?: Environments;
-
   /**
    * @description Overrides the default environment
    * @default development
    */
   defaultEnv?: string;
-
-  /**
-   * @deprecated Use camelcase
-   */
-  keyToJsProp?: boolean;
 
   /**
    * @description Will transform an environment variable name into a camelcased property

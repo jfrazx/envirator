@@ -3,7 +3,7 @@ import { Determinative } from '../determinative';
 import { asArray } from '@jfrazx/asarray';
 import * as dotenv from 'dotenv';
 import { Level } from '../enums';
-import chalk from 'chalk';
+import pc from 'picocolors';
 import {
   isObject,
   isString,
@@ -17,10 +17,16 @@ import {
   EnvLogger,
   EnvOptions,
   EnvManyResult,
+  EnvErrorHandler,
   EnvInitOptions,
   EnvLoadOptions,
   EnvManyOptions,
 } from '../interfaces';
+import {
+  EnviratorError,
+  EnvironmentConfigError,
+  MissingEnvironmentError,
+} from '../errors';
 
 const defaultMutator = <T = string>(value: T) => value;
 
@@ -33,9 +39,26 @@ export class Envirator {
     this.determine = new Determinative(this, this.options);
   }
 
-  protected exit(message: string, logger: EnvLogger): never {
-    logger.error(message);
-    process.exit(1);
+  /**
+   * Hand the error to the configured failure policy, then throw it.
+   *
+   * The handler exists so an application can decide process lifetime for itself --
+   * log, aggregate, or terminate. If it returns, the error is thrown, so this
+   * always ends the current call.
+   *
+   * @protected
+   * @param {EnviratorError} error
+   * @param {EnvErrorHandler} [onError]
+   * @returns {never}
+   * @memberof Envirator
+   */
+  protected fail(
+    error: EnviratorError,
+    onError: EnvErrorHandler = this.options.onError
+  ): never {
+    onError(error);
+
+    throw error;
   }
 
   /**
@@ -55,7 +78,7 @@ export class Envirator {
 
     const {
       nodeEnv = this.options.nodeEnv,
-      logger = this.options.logger,
+      onError = this.options.onError,
       config = {},
     } = options;
 
@@ -64,12 +87,7 @@ export class Envirator {
     const envResult = dotenv.config({ ...config, path: usePath });
 
     if (envResult.error) {
-      this.exit(
-        chalk.red(
-          `[ENV ${Level.Error}] failed to load '${usePath}': ${envResult.error}`
-        ),
-        logger
-      );
+      this.fail(new EnvironmentConfigError(usePath, envResult.error), onError);
     }
   }
 
@@ -90,19 +108,49 @@ export class Envirator {
    * @returns {T}
    * @memberof Envirator
    */
-  provide<T = string>(
+  provide<T = string>(key: string, options: EnvOptions = {}): T {
+    return this.provideValue<T>(key, options);
+  }
+
+  /**
+   * Retrieve an environment variable, optionally collecting a missing key
+   * rather than failing on it.
+   *
+   * @protected
+   * @template T
+   * @param {string} key
+   * @param {EnvOptions} options
+   * @param {string[]} [collect] when supplied, a missing key is pushed here instead of throwing
+   * @returns {T}
+   * @memberof Envirator
+   */
+  protected provideValue<T = string>(
     key: string,
     {
       mutators,
       logger = this.options.logger,
       warnOnly = this.options.warnOnly,
+      onError = this.options.onError,
       suppressWarnings = this.options.suppressWarnings,
       ...options
-    }: EnvOptions = {}
+    }: EnvOptions = {},
+    collect?: string[]
   ): T {
     const value = this.determine.environmentValue(key, options);
 
-    this.exitOrWarn(key, value, warnOnly, logger, suppressWarnings);
+    const missing = this.failOrWarn(
+      key,
+      value,
+      warnOnly,
+      logger,
+      suppressWarnings,
+      onError,
+      collect
+    );
+
+    if (missing) {
+      return undefined as any;
+    }
 
     const mutatedValue = asArray(mutators!).reduce(
       (memo: any, func) => func.call(null, memo),
@@ -115,6 +163,9 @@ export class Envirator {
   /**
    * Provide many environment variables at once
    *
+   * Every missing key is collected so a single failure reports all of them,
+   * rather than surfacing them one run at a time.
+   *
    * @param {EnvMany} envars
    * @returns {EnvManyResult}
    * @memberof Envirator
@@ -123,27 +174,32 @@ export class Envirator {
     envars: EnvMany,
     shape: ResultTo<T> = defaultMutator
   ): T {
-    return shape(
-      envars.reduce((memo, envar) => {
-        const {
-          camelcase,
-          key = envar as string,
-          keyTo = defaultMutator,
-          keyToJsProp = this.options.camelcase,
-        } = envar as EnvManyOptions;
-        const opts: EnvOptions = isString(envar) ? {} : envar;
-        const useKey = this.determine.environmentKey(
-          key,
-          camelcase ?? keyToJsProp,
-          keyTo
-        );
+    const missing: string[] = [];
 
-        return {
-          ...memo,
-          [useKey]: this.provide(key, opts),
-        };
-      }, {} as T)
-    );
+    const result = envars.reduce((memo, envar) => {
+      const {
+        camelcase = this.options.camelcase,
+        key = envar as string,
+        keyTo = defaultMutator,
+      } = envar as EnvManyOptions;
+      const opts: EnvOptions = isString(envar) ? {} : envar;
+      const useKey = this.determine.environmentKey(key, camelcase, keyTo);
+      const collected = missing.length;
+      const value = this.provideValue(key, opts, missing);
+
+      return missing.length > collected
+        ? memo
+        : {
+            ...memo,
+            [useKey]: value,
+          };
+    }, {} as T);
+
+    if (missing.length) {
+      this.fail(new MissingEnvironmentError(missing));
+    }
+
+    return shape(result);
   }
 
   setEnv(key: string, value: any): void;
@@ -257,7 +313,7 @@ export class Envirator {
     const env = process.env[nodeEnv];
 
     return this.doesNotHaveNodeEnv(env)
-      ? (this.exitOrWarn(nodeEnv, undefined, false, logger) as any)
+      ? (this.failOrWarn(nodeEnv, undefined, false, logger) as any)
       : toLowerCase(env || defaultEnv);
   }
 
@@ -272,37 +328,48 @@ export class Envirator {
   }
 
   /**
-   * Exit the process or warn about missing environment variables
+   * Fail or warn about a missing environment variable
    *
-   * @private
+   * @protected
    * @param {string} key
    * @param {(string | undefined)} value
    * @param {boolean} warnOnly
    * @param {EnvLogger} logger
-   * @returns {void}
+   * @param {WarningSuppressor} [suppressWarnings]
+   * @param {EnvErrorHandler} [onError]
+   * @param {string[]} [collect] when supplied, a missing key is pushed here instead of throwing
+   * @returns {boolean} whether the key was missing and collected
    * @memberof Envirator
    */
-  protected exitOrWarn(
+  protected failOrWarn(
     key: string,
     value: string | undefined,
     warnOnly: boolean,
     logger: EnvLogger,
-    suppressWarnings = this.options.suppressWarnings
-  ): void | never {
+    suppressWarnings = this.options.suppressWarnings,
+    onError: EnvErrorHandler = this.options.onError,
+    collect?: string[]
+  ): boolean {
     if (isUndefined(value)) {
-      const level = '%level%';
-      const message = `[ENV ${level}]: Missing environment variable '${key}'`;
-
       if (this.determine.shouldExit(warnOnly)) {
-        return this.exit(
-          chalk.red(message.replace(level, Level.Error)),
-          logger
-        );
+        if (collect) {
+          collect.push(key);
+
+          return true;
+        }
+
+        this.fail(new MissingEnvironmentError([key]), onError);
       }
 
       if (this.determine.shouldWarn(key, suppressWarnings)) {
-        logger.warn(chalk.yellow(message.replace(level, Level.Warn)));
+        logger.warn(
+          pc.yellow(
+            `[ENV ${Level.Warn}]: Missing environment variable '${key}'`
+          )
+        );
       }
     }
+
+    return false;
   }
 }
